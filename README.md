@@ -4,7 +4,7 @@ Script de linux para ver anime subtitulado en español desde la terminal.
 
 
 
-#Uso
+## Uso
 
 Primero clonamos el repositorio y nos movemos a el
 ```
@@ -28,7 +28,7 @@ Ejecuta el archivo install.sh
 Y listo ya puedes usar el comando ani-es desde cualquier parte del sistema para ver tus animes favoritos
 
 
-#Como desinstalo el script
+## Como desinstalo el script
 
 Para desinstalar el script simplemente ejecuta el archivo uninstall.sh
 ```
