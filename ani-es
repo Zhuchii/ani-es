@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -r jkanime.net
+
 main() {
 # cosas para texto
 RED='\033[0;31m'
