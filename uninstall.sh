@@ -8,7 +8,12 @@ if [ ! -f "$INSTALL_DIR/ani-es" ]; then
     exit 1
 fi
 
+if [ ! -f "$INSTALL_DIR/excepciones.json" ]; then
+    exit 1
+fi
 
 sudo rm "$INSTALL_DIR/ani-es"
+sudo rm "$INSTALL_DIR/excepciones.json"
+
 
 echo "El script ani-es ha sido desinstalado correctamente."

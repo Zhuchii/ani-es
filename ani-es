@@ -1,6 +1,5 @@
 #!/bin/bash
 
-rm -r jkanime.net
 
 main() {
 # cosas para texto
@@ -186,11 +185,27 @@ qee=$(echo "$quer" | tr '[:upper:]' '[:lower:]')
 nuevaurl="https://jkanime.net/$qee"
 
 rm -r jkanime.net
+
+
+value=$(jq -r --arg url "$nuevaurl" '.[$url]' "excepciones.json")
+
+if [ -n "$value" ] && [ "$value" != "null" ]; then
+  nuevaurl=$value
+fi
+
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $nuevaurl > /dev/null 2>&1
-clear
-num_episodios=$(grep -oP '(?<=<li><span>Episodios:</span> )\d+' jkanime.net/$qee)
+
+url_without_https="${nuevaurl/https:\/\//}"
+
+num_episodios=$(grep -oP '(?<=<li><span>Episodios:</span> )\d+' $url_without_https)
 clear
 echo "Elija un capitulo"
+
+if [ -z "$num_episodios" ]; then
+  echo -e "Enlace ${CYAN}$nuevaurl${NC} no válido. Por favor ve a ${GREEN} https://github.com/Zhuchii/ani-es ${NC} y abre un issue especificando el enlace y el anime que estabas intentando ver. Lo corregiré y actualizaré el script ;)"
+  exit
+fi
+
 python3 - <<END
 try:
   for i in range($num_episodios):
@@ -201,7 +216,7 @@ END
 
 read capi
 
-capurl="https://jkanime.net/$qee/$capi"
+capurl="$nuevaurl/$capi"
 
 
 videocap(){
@@ -225,11 +240,11 @@ read op
 if [[ $op -eq 1 ]]; then
   clear
   capi=$((capi + 1)) 
-  videocap "https://jkanime.net/$qee/$capi"
+  videocap "$nuevaurl/$capi"
 elif [[ $op -eq 2 ]]; then
   clear
   capi=$((capi - 1)) 
-  videocap "https://jkanime.net/$qee/$capi"
+  videocap "$nuevaurl/$capi"
 elif [[ $op -eq 3 ]]; then
   clear
   main
