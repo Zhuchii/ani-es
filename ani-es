@@ -197,24 +197,19 @@ wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 
 url_without_https="${nuevaurl/https:\/\//}"
 
-num_episodios=$(grep -oP '(?<=<li><span>Episodios:</span> )\d+' $url_without_https)
+num_episodios=$(grep -oP '<a[^>]*class="[^"]*numbers[^"]*"[^>]*>[^<]*</a>' $url_without_https | grep -oP '\d+ - \d+' | grep -oP '\d+$' | tail -n 1)
 clear
-echo "Elija un capitulo"
+echo -e "Anime: $GREEN $titulo_elegido $WHITE"
+echo -e "Episodios: $PURPLE $num_episodios $WHITE"
+echo '|'
 
 if [ -z "$num_episodios" ]; then
   echo -e "Enlace ${CYAN}$nuevaurl${NC} no válido. Por favor ve a ${GREEN} https://github.com/Zhuchii/ani-es ${NC} y abre un issue especificando el enlace y el anime que estabas intentando ver. Lo corregiré y actualizaré el script ;)"
   exit
 fi
 
-python3 - <<END
-try:
-  for i in range($num_episodios):
-      print(i+1)
-except:
-  print(1)
-END
 
-read capi
+read -p"Episodio: " capi
 
 capurl="$nuevaurl/$capi"
 
