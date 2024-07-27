@@ -25,109 +25,179 @@ NC='\033[0m'
 
 
 pagiona_siguiente() {
-local url=$1
 
-if [[ $url =~ (.*\/)([0-9]+)(\/index\.html) ]]; then
-  local prefix=${BASH_REMATCH[1]}
-  local number=${BASH_REMATCH[2]}
-  local suffix=${BASH_REMATCH[3]}
+clear 
+  local url=$1
 
-  local new_number=$((number + 1))
+new_urls=$(python3 - <<END
 
-  local new_url="${prefix}${new_number}${suffix}"
-else
-  echo "URL no válida"
-fi
+try:
+  url = "$url"
+
+  lista = url.split('/')
+
+  lista[-2]=int(lista[-2])+1
+
+  new_url=''
+
+  for i in lista:
+      new_url+=f'{i}/'
+  new_url=new_url[:-1]
+  print(new_url)
+except:
+ x=1+1
+END
+)
+
+new_dict=$(python3 - <<END
+try:
+  url = "$url"
+
+  lista = url.split('/')
+
+  lista[-2]=int(lista[-2])+1
+
+  new_url=''
+  del(lista[0])
+  for i in lista:
+      new_url+=f'{i}/'
+  new_url=new_url[1:][:-1]
+
+  print(new_url+'index.html')
+except:
+ x=1+1
+END
+)
+
+new_number=$(python3 - <<END
+try:
+  url = "$url"
+
+  lista = url.split('/')
+
+  pepe=int(lista[-2])+1
+
+  print(pepe)
+
+except:
+ x=1+1
+END
+)
+
 
 rm -r jkanime.net
-wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p https://jkanime.net/buscar/$query/$new_number/ wget > /dev/null 2>&1
 
-
-if [[ ! -f $new_url ]]; then
-  echo "Archivo $input_file no encontrado."
-b     exit 1
-fi
+wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $new_urls wget > /dev/null 2>&1
 
 rm -r resultados.txt
 
-grep -oP '(?<=<div class="title">)[^<]+(?=</div>)' $new_url > resultados.txt
+grep -oP '(?<=<div class="title">)[^<]+(?=</div>)' $new_dict > resultados.txt
 
-clear
-echo -e "${BLUE}Pagina: $new_number ${NC}"
 
 num_resultados=$(wc -l < resultados.txt)
-echo "Elige un resultado:"
-cat -n resultados.txt
+
+echo -e "Pagina: $new_number ${NC}"
+
+echo -e "Resultados para: $query"
+
+opcion=$( (cat "resultados.txt"; echo -e "Siguiente"; echo "Anterior"; echo "Salir") | tac | fzf --prompt="Selecciona una opción: " --height=19 --border --info=inline --margin=1,1,0,0)
 
 
-echo -e "${PURPLE}Pagina siguiente-13 ${NC}| ${PURPLE}Pagina anterior-14 ${NC}| ${PURPLE}Cancelar-15${NC}"
-read opcion
-
-
-if [[ $opcion -eq 13 ]]; then
-  pagiona_siguiente $new_url
-elif [[ $opcion -eq 14 ]]; then
-  pagina_anterior $new_url
-elif [[ $opcion -eq 15 ]]; then
+if [[ "$opcion" == "Siguiente" ]]; then
+  pagiona_siguiente $new_urls
+elif [[ "$opcion" == "Anterior" ]]; then
+  pagina_anterior $new_urls
+elif [[ "$opcion" == "Salir" ]]; then
   clear
   main
-elif ((opcion < 1 || opcion > num_resultados)); then
-  echo "Opción inválida. Por favor, elige un número entre 1 y $num_resultados."
-  exit 1
 fi
 
 }
 
 pagina_anterior() {
-local url=$1
 
-if [[ $url =~ (.*\/)([0-9]+)(\/index\.html) ]]; then
-  local prefix=${BASH_REMATCH[1]}
-  local number=${BASH_REMATCH[2]}
-  local suffix=${BASH_REMATCH[3]}
-  
-  local new_number=$((number - 1))
- 
-  local new_url="${prefix}${new_number}${suffix}"
-else
-  echo "URL no válida"
-fi
+clear 
+  local url=$1
+
+new_urls=$(python3 - <<END
+
+try:
+  url = "$url"
+
+  lista = url.split('/')
+
+  lista[-2]=int(lista[-2])-1
+
+  new_url=''
+
+  for i in lista:
+      new_url+=f'{i}/'
+  new_url=new_url[:-1]
+  print(new_url)
+except:
+ x=1+1
+END
+)
+
+new_dict=$(python3 - <<END
+try:
+  url = "$url"
+
+  lista = url.split('/')
+
+  lista[-2]=int(lista[-2])-1
+
+  new_url=''
+  del(lista[0])
+  for i in lista:
+      new_url+=f'{i}/'
+  new_url=new_url[1:][:-1]
+
+  print(new_url+'index.html')
+except:
+ x=1+1
+END
+)
+
+new_number=$(python3 - <<END
+try:
+  url = "$url"
+
+  lista = url.split('/')
+
+  pepe=int(lista[-2])-1
+
+  print(pepe)
+
+except:
+ x=1+1
+END
+)
+
 
 rm -r jkanime.net
-wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p https://jkanime.net/buscar/$query/$new_number/ wget > /dev/null 2>&1
 
-
-if [[ ! -f $new_url ]]; then
-  echo "Archivo $input_file no encontrado."
-b     exit 1
-fi
+wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $new_urls wget > /dev/null 2>&1
 
 rm -r resultados.txt
 
-grep -oP '(?<=<div class="title">)[^<]+(?=</div>)' $new_url > resultados.txt
+grep -oP '(?<=<div class="title">)[^<]+(?=</div>)' $new_dict > resultados.txt
 
-clear
-echo -e "${BLUE}Pagina: $new_number ${NC}"
 
 num_resultados=$(wc -l < resultados.txt)
-echo "Elige un resultado:"
-cat -n resultados.txt
+
+echo -e "Pagina: $new_number ${NC}"
+echo -e "Resultados para: $query"
+opcion=$( (cat "resultados.txt"; echo "Siguiente"; echo "Anterior"; echo "Salir") | tac | fzf --prompt="Selecciona una opción: " --height=19 --border --info=inline --margin=1,1,0,0)
 
 
-echo -e "${PURPLE}Pagina siguiente-13 ${NC}| ${PURPLE}Pagina anterior-14 ${NC}| ${PURPLE}Cancelar-15${NC}"
-read opcion
-
-
-if [[ $opcion -eq 13 ]]; then
-  pagiona_siguiente $new_url
-elif [[ $opcion -eq 14 ]]; then
-  pagina_anterior $new_url
-elif [[ $opcion -eq 15 ]]; then
+if [[ "$opcion" == "Siguiente" ]]; then
+  pagiona_siguiente $new_urls
+elif [[ "$opcion" == "Anterior" ]]; then
+  pagina_anterior $new_urls
+elif [[ "$opcion" == "Salir" ]]; then
   clear
   main
-elif ((opcion < 1 || opcion > num_resultados)); then
-  echo "Opción inválida. Por favor, elige un número entre 1 y $num_resultados."
-  exit 1
 fi
 
 }
@@ -152,32 +222,26 @@ grep -oP '(?<=<div class="title">)[^<]+(?=</div>)' $input_file > resultados.txt
 
 clear
 
-echo -e "${BLUE}Pagina: 1${NC}"
-
 num_resultados=$(wc -l < resultados.txt)
-echo "Elige un resultado:"
-cat -n resultados.txt
+
+echo -e "Pagina: 1 ${NC}"
+echo -e "Resultados para: $query"
+
+opcion=$( (cat "resultados.txt"; echo "Siguiente"; echo "Anterior"; echo "Salir") | tac | fzf --prompt="Selecciona una opción: " --height=19 --border --info=inline --margin=1,1,0,0)
 
 
-echo -e "${PURPLE}Pagina siguiente-13 ${NC}| ${PURPLE}Pagina anterior-14 ${NC}| ${PURPLE}Cancelar-15${NC}"
-read opcion
-
-
-if [[ $opcion -eq 13 ]]; then
-  pagiona_siguiente $input_file
-elif [[ $opcion -eq 14 ]]; then
-  pagina_anterior $new_url
-elif [[ $opcion -eq 15 ]]; then
+if [[ "$opcion" == "Siguiente" ]]; then
+  pagiona_siguiente "https://jkanime.net/buscar/$query/1/"
+elif [[ "$opcion" == "Anterior" ]]; then
+  pagina_anterior "https://jkanime.net/buscar/$query/1/"
+elif [[ "$opcion" == "Salir" ]]; then
   clear
   main
-elif ((opcion < 1 || opcion > num_resultados)); then
-  echo "Opción inválida. Por favor, elige un número entre 1 y $num_resultados."
-  exit 1
 fi
 
 
 
-titulo_elegido=$(sed -n "${opcion}p" resultados.txt)
+titulo_elegido=$opcion
 
 quer=$(echo "$titulo_elegido" | tr -cd '[:alnum:] -')
 quer=$(echo $quer| tr ' ' '-')
@@ -194,9 +258,9 @@ if [ -n "$value" ] && [ "$value" != "null" ]; then
 fi
 
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $nuevaurl > /dev/null 2>&1
-
+clear
 url_without_https="${nuevaurl/https:\/\//}"
-
+clear
 num_episodios=$(grep -oP '<a[^>]*class="[^"]*numbers[^"]*"[^>]*>[^<]*</a>' $url_without_https | grep -oP '\d+ - \d+' | grep -oP '\d+$' | tail -n 1)
 clear
 echo -e "Anime: $GREEN $titulo_elegido $WHITE"
