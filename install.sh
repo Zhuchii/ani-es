@@ -3,6 +3,8 @@
 
 sudo apt-get install -y wget
 
+sudo apt-get install -y fzf
+
 sudo apt-get install -y grep
 
 sudo apt-get install -y sed
