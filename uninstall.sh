@@ -14,6 +14,6 @@ fi
 
 sudo rm "$INSTALL_DIR/ani-es"
 sudo rm "$INSTALL_DIR/excepciones.json"
-
+sudo rm -r ~/ani-es/history.db
 
 echo "El script ani-es ha sido desinstalado correctamente."
