@@ -37,5 +37,8 @@ Para desinstalar el script simplemente ejecuta el archivo uninstall.sh
 ./uninstall.sh
 ```
 
+## Dependencias adicionales
+
+python3
 
 P.D aun esta en desarrollo asi que puede tener algun bug o algun anime en especifico que no se reproduzca
