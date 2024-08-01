@@ -24,6 +24,7 @@ BG_WHITE='\033[47m'
 NC='\033[0m'
 
 
+
 pagiona_siguiente() {
 
 clear 
@@ -251,7 +252,7 @@ nuevaurl="https://jkanime.net/$qee"
 rm -r jkanime.net
 
 
-value=$(jq -r --arg url "$nuevaurl" '.[$url]' "excepciones.json")
+value=$(jq -r --arg url "$nuevaurl" '.[$url]' "/usr/local/bin/excepciones.json")
 
 if [ -n "$value" ] && [ "$value" != "null" ]; then
   nuevaurl=$value
@@ -264,6 +265,40 @@ clear
 num_episodios=$(grep -oP '<a[^>]*class="[^"]*numbers[^"]*"[^>]*>[^<]*</a>' $url_without_https | grep -oP '\d+ - \d+' | grep -oP '\d+$' | tail -n 1)
 clear
 echo -e "Anime: $GREEN $titulo_elegido $WHITE"
+  last_cap=$(python3 - <<END
+import sqlite3
+import os
+
+def conection():
+    home_dir = os.path.expanduser("~")
+    db_path = os.path.join(home_dir, "ani-es", "history.db")
+    return sqlite3.connect(db_path)
+
+anime = '$titulo_elegido'
+
+conect = conection()
+cursor = conect.cursor()
+
+cursor.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='animes' ''')
+if cursor.fetchone()[0] == 0:
+    cursor.execute('''
+        CREATE TABLE animes (
+            id INTEGER PRIMARY KEY,
+            anime TEXT,
+            last_cap TEXT
+        )
+    ''')
+conect.commit()
+
+cursor.execute('SELECT * FROM animes WHERE anime = ?', (anime,))
+row = cursor.fetchone()
+if row:
+    print(row[2])
+END
+)
+
+echo -e "Ultimo episodio visto: $last_cap"
+echo ""
 echo -e "Episodios: $PURPLE $num_episodios $WHITE"
 echo '|'
 
@@ -287,6 +322,44 @@ src_contenido="$(grep -A 1 video jkanime.net/um.php* | grep url | cut -d"'" -f2 
 
 clear
 echo "Reproduciendo... Capitulo: $capi"
+python3 - <<END
+import sqlite3
+import os
+
+def conection():
+    home_dir = os.path.expanduser("~")
+    db_path = os.path.join(home_dir, "ani-es", "history.db")
+    return sqlite3.connect(db_path)
+
+anime = '$titulo_elegido'
+capi = '$capi'
+
+conect = conection()
+cursor = conect.cursor()
+
+cursor.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='animes' ''')
+if cursor.fetchone()[0] == 0:
+    cursor.execute('''
+        CREATE TABLE animes (
+            id INTEGER PRIMARY KEY,
+            anime TEXT,
+            last_cap TEXT
+        )
+    ''')
+conect.commit()
+cursor.execute('SELECT * FROM animes WHERE anime = ?', (anime,))
+row = cursor.fetchone()
+if row is None:
+  cursor.execute('INSERT INTO animes (anime, last_cap) VALUES (?, ?)', (anime, capi,))
+  conect.commit()
+else:
+  cursor.execute('SELECT *FROM animes WHERE anime = ?', [anime,])
+  row = cursor.fetchone()
+  if int(row[2])<int(capi):
+    cursor.execute("UPDATE animes SET last_cap = ? WHERE anime = ?", (capi, anime))
+    conect.commit()
+conect.commit()
+END
 mpv "$src_contenido" > /dev/null 2>&1
 
 clear
@@ -298,11 +371,49 @@ echo "3 Atras"
 read op
 if [[ $op -eq 1 ]]; then
   clear
-  capi=$((capi + 1)) 
+  capi=$((capi + 1))
+python3 - <<END
+import sqlite3
+import os
+
+def conection():
+    home_dir = os.path.expanduser("~")
+    db_path = os.path.join(home_dir, "ani-es", "history.db")
+    return sqlite3.connect(db_path)
+
+anime = '$titulo_elegido'
+capi = '$capi'
+
+conect = conection()
+cursor = conect.cursor()
+
+cursor.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='animes' ''')
+if cursor.fetchone()[0] == 0:
+    cursor.execute('''
+        CREATE TABLE animes (
+            id INTEGER PRIMARY KEY,
+            anime TEXT,
+            last_cap TEXT
+        )
+    ''')
+conect.commit()
+cursor.execute('SELECT * FROM animes WHERE anime = ?', (anime,))
+row = cursor.fetchone()
+if row is None:
+  cursor.execute('INSERT INTO animes (anime, last_cap) VALUES (?, ?)', (anime, capi,))
+  conect.commit()
+else:
+  cursor.execute('SELECT *FROM animes WHERE anime = ?', [anime,])
+  row = cursor.fetchone()
+  if int(row[2])<int(capi):
+    cursor.execute("UPDATE animes SET last_cap = ? WHERE anime = ?", (capi, anime))
+    conect.commit()
+conect.commit()
+END
   videocap "$nuevaurl/$capi"
 elif [[ $op -eq 2 ]]; then
   clear
-  capi=$((capi - 1)) 
+  capi=$((capi - 1))
   videocap "$nuevaurl/$capi"
 elif [[ $op -eq 3 ]]; then
   clear
