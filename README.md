@@ -1,5 +1,5 @@
 # ani-es
-Script de linux para ver anime subtitulado en español desde la terminal.
+Script para ubuntu para ver anime subtitulado en español desde la terminal.
 
 Todos los animes estan extraidos desde jkanime
 
