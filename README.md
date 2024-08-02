@@ -1,12 +1,13 @@
 # ani-es
 Script de linux para ver anime subtitulado en español desde la terminal.
 
--# Todos los animes estan extraidos desde jkanime
+Todos los animes estan extraidos desde jkanime
 
 
-
+[ani-es.webm](https://github.com/user-attachments/assets/a0f905c8-5be9-4dfa-bda9-8a7f6facdd64)
 
 ## Uso
+
 
 Primero clonamos el repositorio y nos movemos a el
 ```
