@@ -226,10 +226,11 @@ clear
 num_resultados=$(wc -l < resultados.txt)
 
 echo -e "Pagina: 1 ${NC}"
+
 echo -e "Resultados para: $query"
 
 opcion=$( (cat "resultados.txt"; echo "Siguiente"; echo "Anterior"; echo "Salir") | tac | fzf --prompt="Selecciona una opción: " --height=19 --border --info=inline --margin=1,1,0,0)
-
+clear
 
 if [[ "$opcion" == "Siguiente" ]]; then
   pagiona_siguiente "https://jkanime.net/buscar/$query/1/"
@@ -363,13 +364,9 @@ END
 mpv "$src_contenido" > /dev/null 2>&1
 
 clear
-echo "Elija una opcion:"
-echo "1 Siguiente"
-echo "2 Retroceder"
-echo "3 Atras" 
+op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras") | tac | fzf --prompt="Selecciona una opción: " --height=7 --border --info=inline --margin=1,1,0,0)
 
-read op
-if [[ $op -eq 1 ]]; then
+if [[ "$op" == "Siguiente" ]]; then
   clear
   capi=$((capi + 1))
 python3 - <<END
@@ -411,11 +408,11 @@ else:
 conect.commit()
 END
   videocap "$nuevaurl/$capi"
-elif [[ $op -eq 2 ]]; then
+elif [[ "$op" == "Retroceder" ]]; then
   clear
   capi=$((capi - 1))
   videocap "$nuevaurl/$capi"
-elif [[ $op -eq 3 ]]; then
+elif [[ "$opcion" == "Atras" ]]; then
   clear
   main
 fi
