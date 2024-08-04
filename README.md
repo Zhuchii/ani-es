@@ -1,12 +1,12 @@
 # ani-es
-Script de linux para ver anime subtitulado en español desde la terminal.
+Script de **linux** para ver anime subtitulado en español desde la terminal.
 
 Todos los animes estan extraidos desde jkanime
 
 ## Compatible con
 Debian, Ubuntu, Fedora, Red Hat Enterprise Linux (RHEL), CentOS, openSUSE, Arch Linux,
 
-Estos y sus derivados que ussen cualquiera de los siguientes gestores de paquetes:
+Estos y sus derivados que usen cualquiera de los siguientes **gestores de paquetes**:
 apt-get ,dnf, yum, zypper y pacman
 
 ## Ejemplo de uso
