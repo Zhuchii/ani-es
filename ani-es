@@ -23,7 +23,7 @@ BG_WHITE='\033[47m'
 
 NC='\033[0m'
 
-version= "1.0.0"
+
 
 pagiona_siguiente() {
 
