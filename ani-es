@@ -253,10 +253,25 @@ nuevaurl="https://jkanime.net/$qee"
 rm -r jkanime.net
 
 
-value=$(jq -r --arg url "$nuevaurl" '.[$url]' "/usr/local/bin/excepciones.json")
+# URL del archivo JSON
+JSON_URL="https://zhuchii.github.io/ani-es/excepciones.json"
+
+
+value=$(curl -s "$JSON_URL")
 
 if [ -n "$value" ] && [ "$value" != "null" ]; then
-  nuevaurl=$value
+
+
+    extracted_value=$(echo "$value" | jq -r --arg url "$nuevaurl" '.[$url]')
+
+    # Comprobar si el valor extraído no está vacío
+    if [ -n "$extracted_value" ] && [ "$extracted_value" != "null" ]; then
+        nuevaurl=$extracted_value
+    else
+        echo "No se encontró un valor para la URL: $nuevaurl"
+    fi
+else
+    echo "El contenido del JSON está vacío o es nulo."
 fi
 
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $nuevaurl > /dev/null 2>&1
