@@ -268,10 +268,10 @@ if [ -n "$value" ] && [ "$value" != "null" ]; then
     if [ -n "$extracted_value" ] && [ "$extracted_value" != "null" ]; then
         nuevaurl=$extracted_value
     else
-
+        echo ""
     fi
 else
-
+    echo ""
 fi
 
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $nuevaurl > /dev/null 2>&1
@@ -332,9 +332,12 @@ capurl="$nuevaurl/$capi"
 videocap(){
 capa=$1
 rm -r jkanime.net
-wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $capa > /dev/null 2>&1
+wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$capa" > /dev/null 2>&1
 
-src_contenido="$(grep -A 1 video jkanime.net/um.php* | grep url | cut -d"'" -f2 | head -n1)"
+tre=$(grep -oP '<iframe[^>]+src="/jk.php\K[^"]*' "jkanime.net/$qee/index.html")
+wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$tre" > /dev/null 2>&1
+
+src_contenido="$(grep -A 1 "video: {" jkanime.net/jk.php* | sed -n -e "s/.*url: '\(.*\)',.*/\1/p" -e "s/.*type: '\(.*\)'.*/\1/p")"
 
 clear
 echo "Reproduciendo... Capitulo: $capi"
@@ -376,9 +379,12 @@ else:
     conect.commit()
 conect.commit()
 END
+
+
 mpv "$src_contenido" > /dev/null 2>&1
 
 clear
+
 op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras") | tac | fzf --prompt="Selecciona una opción: " --height=7 --border --info=inline --margin=1,1,0,0)
 
 if [[ "$op" == "Siguiente" ]]; then
