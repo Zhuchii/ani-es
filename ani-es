@@ -332,14 +332,51 @@ capurl="$nuevaurl/$capi"
 videocap(){
 capa=$1
 rm -r jkanime.net
+rm -r mediafire.com
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$capa" > /dev/null 2>&1
 
-tre=$(grep -oP '<iframe[^>]+src="/jk.php\K[^"]*' "jkanime.net/$qee/index.html")
-wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$tre" > /dev/null 2>&1
+pes=$(find "jkanime.net/$qee/" -maxdepth 1 -type f -printf "%f\n")
+tre=$(grep -oP '<iframe[^>]+src="/jk.php\K[^"]*' "jkanime.net/$qee/$pes")
+archivor="jkanime.net/$qee/$pes"
+tre=$(grep -oP '<iframe[^>]+src="/jk.php\K[^"]*' "$archivor")
+clear
+if [ -z "$tre" ]; then
 
-src_contenido="$(grep -A 1 "video: {" jkanime.net/jk.php* | sed -n -e "s/.*url: '\(.*\)',.*/\1/p" -e "s/.*type: '\(.*\)'.*/\1/p")"
+  servers_line=$(grep -oP 'var servers = \[.*?\];' "$archivor")
+
+  if [ -n "$servers_line" ]; then
+
+    src_contenid=$(python3 - <<END
+import json
+import base64
+import re
+
+data_string = '''$servers_line'''
+json_str = re.search(r'var servers = (.+?);', data_string).group(1)
+servers = json.loads(json_str)
+
+mp4upload_server = next(
+    (server for server in servers if server["server"] == "Mediafire"),
+    None
+)
+
+print(base64.b64decode(mp4upload_server['remote']).decode('utf-8'))
+END
+    )
+wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$src_contenid" > /dev/null 2>&1
+index=$(find mediafire.com -type f -name "index.html")
+src_contenido=$(grep -oP '(?<=href=")[^"]*' "$index" | grep 'https://download')
+  
+  else
+    echo ""
+  fi
+else
+  wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$tre" > /dev/null 2>&1
+  src_contenido="$(grep -A 1 "video: {" jkanime.net/jk.php* | sed -n -e "s/.*url: '\(.*\)',.*/\1/p" -e "s/.*type: '\(.*\)'.*/\1/p")"
+fi
 
 clear
+
 echo "Reproduciendo... Capitulo: $capi"
 python3 - <<END
 import sqlite3
@@ -383,7 +420,7 @@ END
 
 mpv "$src_contenido" > /dev/null 2>&1
 
-clear
+
 
 op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras") | tac | fzf --prompt="Selecciona una opción: " --height=7 --border --info=inline --margin=1,1,0,0)
 
