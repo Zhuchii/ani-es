@@ -1,5 +1,6 @@
 #!/bin/bash
 
+arg1="$*"
 
 main() {
 # cosas para texto
@@ -203,7 +204,12 @@ fi
 
 }
 
-read -p"Buscar Anime: " oracion
+if [[ -z "$arg1" ]]; then
+  read -p "Buscar Anime: " oracion
+  clear
+else
+  oracion="$arg1"
+fi
 
 
 query=$(echo $oracion | tr ' ' '_')
@@ -225,12 +231,18 @@ clear
 
 num_resultados=$(wc -l < resultados.txt)
 
-echo -e "Pagina: 1 ${NC}"
 
-echo -e "Resultados para: $query"
+num_animes=$(wc -l < resultados.txt)
+if [[ "$num_animes" == "1" ]]; then
+  opcion=$(cat resultados.txt)
+  echo Cargando...
+else
+  echo -e "Pagina: 1 ${NC}"
 
-opcion=$( (cat "resultados.txt"; echo "Siguiente"; echo "Anterior"; echo "Salir") | tac | fzf --prompt="Selecciona una opción: " --height=19 --border --info=inline --margin=1,1,0,0)
-clear
+  echo -e "Resultados para: $query"
+  opcion=$( (cat "resultados.txt"; echo "Siguiente"; echo "Anterior"; echo "Salir") | tac | fzf --prompt="Selecciona una opción: " --height=19 --border --info=inline --margin=1,1,0,0)
+  clear
+fi
 
 if [[ "$opcion" == "Siguiente" ]]; then
   pagiona_siguiente "https://jkanime.net/buscar/$query/1/"
@@ -254,7 +266,7 @@ rm -r jkanime.net
 
 
 
-JSON_URL="https://zhuchii.github.io/ani-es/excepciones.json"
+JSON_URL="https://tablet-sci-bra-northern.trycloudflare.com/excepciones"
 
 
 value=$(curl -s "$JSON_URL")
@@ -331,16 +343,15 @@ capurl="$nuevaurl/$capi"
 
 videocap(){
 capa=$1
-rm -r jkanime.net
-rm -r mediafire.com
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$capa" > /dev/null 2>&1
 
-pes=$(find "jkanime.net/$qee/" -maxdepth 1 -type f -printf "%f\n")
-tre=$(grep -oP '<iframe[^>]+src="/jk.php\K[^"]*' "jkanime.net/$qee/$pes")
-archivor="jkanime.net/$qee/$pes"
+primera_carpeta=$(ls -d jkanime.net/*/ 2> /dev/null | head -n 1)
+primera_carpeta="${primera_carpeta%/}"
+pes=$(find "$primera_carpeta/" -maxdepth 1 -type f -printf "%f\n")
+archivor="$primera_carpeta/$pes"
 tre=$(grep -oP '<iframe[^>]+src="/jk.php\K[^"]*' "$archivor")
-clear
-if [ -z "$tre" ]; then
+
+if ! ls jkanime.ne/jk.php* 1> /dev/null 2>&1; then
 
   servers_line=$(grep -oP 'var servers = \[.*?\];' "$archivor")
 
@@ -376,6 +387,7 @@ else
 fi
 
 clear
+
 
 echo "Reproduciendo... Capitulo: $capi"
 python3 - <<END
@@ -417,10 +429,12 @@ else:
 conect.commit()
 END
 
+rm -r jkanime.net
+rm -r mediafire.com
 
-mpv "$src_contenido" > /dev/null 2>&1
+wget -qO-  "$src_contenido" | mpv -> /dev/null 2>&1
 
-
+clear
 
 op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras") | tac | fzf --prompt="Selecciona una opción: " --height=7 --border --info=inline --margin=1,1,0,0)
 
