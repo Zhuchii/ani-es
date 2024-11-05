@@ -276,7 +276,6 @@ if [ -n "$value" ] && [ "$value" != "null" ]; then
 
     extracted_value=$(echo "$value" | jq -r --arg url "$nuevaurl" '.[$url]')
 
-    # Comprobar si el valor extraído no está vacío
     if [ -n "$extracted_value" ] && [ "$extracted_value" != "null" ]; then
         nuevaurl=$extracted_value
     else
