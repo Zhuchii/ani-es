@@ -262,7 +262,6 @@ quer=$(echo $quer| tr ' ' '-')
 qee=$(echo "$quer" | tr '[:upper:]' '[:lower:]')
 nuevaurl="https://jkanime.net/$qee"
 
-rm -r jkanime.net
 
 
 
@@ -285,11 +284,19 @@ else
     echo ""
 fi
 
+rm -r jkanime.net
+
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $nuevaurl > /dev/null 2>&1
 clear
 url_without_https="${nuevaurl/https:\/\//}"
 clear
-num_episodios=$(grep -oP '<a[^>]*class="[^"]*numbers[^"]*"[^>]*>[^<]*</a>' $url_without_https | grep -oP '\d+ - \d+' | grep -oP '\d+$' | tail -n 1)
+num_episodios=$(grep -oP '<a[^>]*class="[^"]*numbers[^"]*"[^>]*>[^<]*</a>' "$url_without_https" | grep -oP '\d+ - \d+' | grep -oP '\d+$' | tail -n 1)
+
+if [[ -z $num_episodios ]]; then
+    num_episodios=$(find jkanime.net -type f -name '*.html' -exec grep -oP '<a[^>]*class="[^"]*numbers[^"]*"[^>]*>[^<]*</a>' {} + \
+        | grep -oP '\d+ - \d+' | grep -oP '\d+$' | tail -n 1)
+fi
+
 clear
 echo -e "Anime: $GREEN $titulo_elegido $WHITE"
   last_cap=$(python3 - <<END
@@ -331,6 +338,7 @@ echo '|'
 
 if [ -z "$num_episodios" ]; then
   echo -e "Enlace ${CYAN}$nuevaurl${NC} no válido. Por favor ve a ${GREEN} https://github.com/Zhuchii/ani-es ${NC} y abre un issue especificando el enlace y el anime que estabas intentando ver. Lo corregiré y actualizaré el script ;)"
+  echo "$url_without_https"
   exit
 fi
 
@@ -346,7 +354,7 @@ wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 
 primera_carpeta=$(ls -d jkanime.net/*/ 2> /dev/null | head -n 1)
 primera_carpeta="${primera_carpeta%/}"
-pes=$(find "$primera_carpeta/" -maxdepth 1 -type f -printf "%f\n")
+pes=$(find "$primera_carpeta/" -maxdepth 1 -type f -printf "%f\n" | head -n 1)
 archivor="$primera_carpeta/$pes"
 tre=$(grep -oP '<iframe[^>]+src="/jk.php\K[^"]*' "$archivor")
 
@@ -433,7 +441,7 @@ rm -r mediafire.com
 
 wget -qO-  "$src_contenido" | mpv -> /dev/null 2>&1
 
-clear
+
 
 op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras") | tac | fzf --prompt="Selecciona una opción: " --height=7 --border --info=inline --margin=1,1,0,0)
 
