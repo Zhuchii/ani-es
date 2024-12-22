@@ -441,7 +441,7 @@ rm -r mediafire.com
 
 wget -qO-  "$src_contenido" | mpv -> /dev/null 2>&1
 
-
+clear
 
 op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras") | tac | fzf --prompt="Selecciona una opción: " --height=7 --border --info=inline --margin=1,1,0,0)
 
