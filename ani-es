@@ -2,6 +2,8 @@
 
 arg1="$*"
 
+
+
 main() {
 # cosas para texto
 RED='\033[0;31m'
@@ -25,6 +27,27 @@ BG_WHITE='\033[47m'
 NC='\033[0m'
 
 
+urlo="https://raw.githubusercontent.com/Zhuchii/ani-es/refs/heads/main/ani-es"
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+ARCHIVO="$SCRIPT_DIR/ani-es"
+
+echo -e ${BLUE}Verificando actualizaciones disponibles...${NC}
+actualizado=$(curl -s "$urlo")
+actual=$(cat "$ARCHIVO")
+
+update="$(curl -s "https://raw.githubusercontent.com/Zhuchii/ani-es/refs/heads/main/ani-es")"
+if [ "$update" != "$(cat "$ARCHIVO")" ]; then
+    echo -n -e "${CYAN}Hay una actualizacion disponible se recomienda actualizar para garantizar que el script funcine correctamente (y/n) ${NC}"
+    read ele
+    if [ "$ele" == "y" ];then
+    diff -u "$ARCHIVO" <(echo "$update") | sudo patch "$ARCHIVO" > /dev/null 2>&1- && echo -e "${CYAN}El script ha sido actualizado${NC}" || echo -e "${RED}Ha ocurrido un error mientras se actualizaba el script${NC}"
+    exit 0
+    fi
+else
+    echo "Script actualizado"
+fi
+
+clear
 
 pagiona_siguiente() {
 
