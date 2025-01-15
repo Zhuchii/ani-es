@@ -381,7 +381,7 @@ pes=$(find "$primera_carpeta/" -maxdepth 1 -type f -printf "%f\n" | head -n 1)
 archivor="$primera_carpeta/$pes"
 tre=$(grep -oP '<iframe[^>]+src="/jk.php\K[^"]*' "$archivor")
 
-if ! ls jkanime.ne/jk.php* 1> /dev/null 2>&1; then
+if ! ls jkanime.net/jk.php* 1> /dev/null 2>&1; then
 
   servers_line=$(grep -oP 'var servers = \[.*?\];' "$archivor")
 
@@ -459,8 +459,7 @@ else:
 conect.commit()
 END
 
-rm -r jkanime.net
-rm -r mediafire.com
+rm -r jkanime.net mediafire.com > /dev/null 2>&1
 
 wget -qO-  "$src_contenido" | mpv -> /dev/null 2>&1
 
