@@ -286,7 +286,8 @@ qee=$(echo "$quer" | tr '[:upper:]' '[:lower:]')
 nuevaurl="https://jkanime.net/$qee"
 
 
-
+clear
+echo Cargando...
 
 JSON_URL="https://tablet-sci-bra-northern.trycloudflare.com/excepciones"
 
@@ -307,19 +308,18 @@ else
     echo ""
 fi
 
-rm -r jkanime.net
+rm -r jkanime.net > /dev/null 2>&1
 
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $nuevaurl > /dev/null 2>&1
-clear
+
 url_without_https="${nuevaurl/https:\/\//}"
-clear
+
 num_episodios=$(grep -oP '<a[^>]*class="[^"]*numbers[^"]*"[^>]*>[^<]*</a>' "$url_without_https" | grep -oP '\d+ - \d+' | grep -oP '\d+$' | tail -n 1)
 
 if [[ -z $num_episodios ]]; then
     num_episodios=$(find jkanime.net -type f -name '*.html' -exec grep -oP '<a[^>]*class="[^"]*numbers[^"]*"[^>]*>[^<]*</a>' {} + \
         | grep -oP '\d+ - \d+' | grep -oP '\d+$' | tail -n 1)
 fi
-
 clear
 echo -e "Anime: $GREEN $titulo_elegido $WHITE"
   last_cap=$(python3 - <<END
@@ -461,7 +461,8 @@ END
 
 rm -r jkanime.net mediafire.com > /dev/null 2>&1
 
-wget -qO-  "$src_contenido" | mpv -> /dev/null 2>&1
+
+wget -qO-  "$src_contenido" | mpv --force-media-title="$opcion-$capi" -> /dev/null 2>&1
 
 clear
 
