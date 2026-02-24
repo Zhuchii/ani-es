@@ -471,7 +471,7 @@ rm -r jkanime.net mediafire.com > /dev/null 2>&1
 
 wget -qO-  "$src_contenido" | mpv --force-media-title="$opcion-$capi" -> /dev/null 2>&1
 
-
+clear
 
 op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras") | tac | fzf --prompt="Selecciona una opción: " --height=7 --border --info=inline --margin=1,1,0,0)
 
