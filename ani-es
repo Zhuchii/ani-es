@@ -237,10 +237,11 @@ fi
 
 query=$(echo $oracion | tr ' ' '_')
 
-wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p https://jkanime.net/buscar/$query/1/ > /dev/null 2>&1
+
+wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p https://jkanime.net/buscar/$query/ > /dev/null 2>&1
 
 
-input_file="jkanime.net/buscar/$query/1/index.html"
+input_file="jkanime.net/buscar/$query/index.html"
 
 
 if [[ ! -f $input_file ]]; then
@@ -248,9 +249,9 @@ if [[ ! -f $input_file ]]; then
   exit 1
 fi
 
-grep -oP '(?<=<div class="title">)[^<]+(?=</div>)' $input_file > resultados.txt
+grep -oP '<h5><a\s+href="[^"]*">\K.*?(?=</a></h5>)' $input_file > resultados.txt
 
-clear
+
 
 num_resultados=$(wc -l < resultados.txt)
 
@@ -264,15 +265,13 @@ else
 
   echo -e "Resultados para: $query"
   opcion=$( (cat "resultados.txt"; echo "Siguiente"; echo "Anterior"; echo "Salir") | tac | fzf --prompt="Selecciona una opción: " --height=19 --border --info=inline --margin=1,1,0,0)
-  clear
 fi
 
 if [[ "$opcion" == "Siguiente" ]]; then
-  pagiona_siguiente "https://jkanime.net/buscar/$query/1/"
+  pagiona_siguiente "https://jkanime.net/buscar/$query/"
 elif [[ "$opcion" == "Anterior" ]]; then
-  pagina_anterior "https://jkanime.net/buscar/$query/1/"
+  pagina_anterior "https://jkanime.net/buscar/$query/"
 elif [[ "$opcion" == "Salir" ]]; then
-  clear
   main
 fi
 
@@ -286,10 +285,10 @@ qee=$(echo "$quer" | tr '[:upper:]' '[:lower:]')
 nuevaurl="https://jkanime.net/$qee"
 
 
-clear
+
 echo Cargando...
 
-JSON_URL="https://tablet-sci-bra-northern.trycloudflare.com/excepciones"
+JSON_URL="https://zhuchii.github.io/ani-es/excepciones.json"
 
 
 value=$(curl -s "$JSON_URL")
@@ -314,11 +313,20 @@ wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 
 url_without_https="${nuevaurl/https:\/\//}"
 
-num_episodios=$(grep -oP '<a[^>]*class="[^"]*numbers[^"]*"[^>]*>[^<]*</a>' "$url_without_https" | grep -oP '\d+ - \d+' | grep -oP '\d+$' | tail -n 1)
+num_episodios=$(grep -oP '<li><span>Episodios:</span> \K\d+' "$url_without_https" | tail -n 1)
 
-if [[ -z $num_episodios ]]; then
-    num_episodios=$(find jkanime.net -type f -name '*.html' -exec grep -oP '<a[^>]*class="[^"]*numbers[^"]*"[^>]*>[^<]*</a>' {} + \
-        | grep -oP '\d+ - \d+' | grep -oP '\d+$' | tail -n 1)
+
+if [ -z "$num_episodios" ] || [ "$num_episodios" -eq 0 ]; then
+    titulo_anime=$(grep -oP '<title>\K[^|-]+' "$url_without_https" | sed 's/ $//')
+
+    num_episodios=$(curl -s -X POST https://graphql.anilist.co \
+        -H 'Content-Type: application/json' \
+        --data "{ \"query\": \"{ Media(search: \\\"$titulo_anime\\\", type: ANIME) { nextAiringEpisode { episode } } }\" }" \
+        | grep -oP '"episode":\s*\K\d+')
+    
+    if [ ! -z "$num_episodios" ]; then
+        num_episodios=$((num_episodios - 1))
+    fi
 fi
 clear
 echo -e "Anime: $GREEN $titulo_elegido $WHITE"
@@ -367,6 +375,7 @@ fi
 
 
 read -p"Episodio: " capi
+clear
 
 capurl="$nuevaurl/$capi"
 
@@ -378,15 +387,12 @@ wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 primera_carpeta=$(ls -d jkanime.net/*/ 2> /dev/null | head -n 1)
 primera_carpeta="${primera_carpeta%/}"
 pes=$(find "$primera_carpeta/" -maxdepth 1 -type f -printf "%f\n" | head -n 1)
-archivor="$primera_carpeta/$pes"
+archivor="$url_without_https/$capi"
 tre=$(grep -oP '<iframe[^>]+src="/jk.php\K[^"]*' "$archivor")
-
 if ! ls jkanime.net/jk.php* 1> /dev/null 2>&1; then
-
   servers_line=$(grep -oP 'var servers = \[.*?\];' "$archivor")
 
   if [ -n "$servers_line" ]; then
-
     src_contenid=$(python3 - <<END
 import json
 import base64
@@ -404,6 +410,7 @@ mp4upload_server = next(
 print(base64.b64decode(mp4upload_server['remote']).decode('utf-8'))
 END
     )
+
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$src_contenid" > /dev/null 2>&1
 index=$(find mediafire.com -type f -name "index.html")
 src_contenido=$(grep -oP '(?<=href=")[^"]*' "$index" | grep 'https://download')
@@ -416,7 +423,7 @@ else
   src_contenido="$(grep -A 1 "video: {" jkanime.net/jk.php* | sed -n -e "s/.*url: '\(.*\)',.*/\1/p" -e "s/.*type: '\(.*\)'.*/\1/p")"
 fi
 
-clear
+
 
 
 echo "Reproduciendo... Capitulo: $capi"
@@ -464,12 +471,12 @@ rm -r jkanime.net mediafire.com > /dev/null 2>&1
 
 wget -qO-  "$src_contenido" | mpv --force-media-title="$opcion-$capi" -> /dev/null 2>&1
 
-clear
+
 
 op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras") | tac | fzf --prompt="Selecciona una opción: " --height=7 --border --info=inline --margin=1,1,0,0)
 
 if [[ "$op" == "Siguiente" ]]; then
-  clear
+
   capi=$((capi + 1))
 python3 - <<END
 import sqlite3
@@ -511,11 +518,11 @@ conect.commit()
 END
   videocap "$nuevaurl/$capi"
 elif [[ "$op" == "Retroceder" ]]; then
-  clear
+
   capi=$((capi - 1))
   videocap "$nuevaurl/$capi"
 elif [[ "$opcion" == "Atras" ]]; then
-  clear
+
   main
 fi
 }
