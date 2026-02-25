@@ -1,24 +1,66 @@
 #!/bin/bash
 
-
-install_package() {
-    local package=$1
+detect_package_manager() {
     if command -v apt-get &> /dev/null; then
-        sudo apt-get install -y "$package"
+        PKG_MANAGER="apt"
     elif command -v dnf &> /dev/null; then
-        sudo dnf install -y "$package"
+        PKG_MANAGER="dnf"
     elif command -v yum &> /dev/null; then
-        sudo yum install -y "$package"
+        PKG_MANAGER="yum"
     elif command -v zypper &> /dev/null; then
-        sudo zypper install -y "$package"
+        PKG_MANAGER="zypper"
     elif command -v pacman &> /dev/null; then
-        sudo pacman -S --noconfirm "$package"
+        PKG_MANAGER="pacman"
     else
-        echo "Gestor de paquetes no soportado. Instala manualmente: $package"
+        echo "Gestor de paquetes no soportado."
         exit 1
     fi
 }
 
+update_system() {
+    case $PKG_MANAGER in
+        apt)
+            sudo apt-get update -y
+            ;;
+        dnf)
+            sudo dnf makecache -y
+            ;;
+        yum)
+            sudo yum makecache -y
+            ;;
+        zypper)
+            sudo zypper refresh -y
+            ;;
+        pacman)
+            sudo pacman -Sy --noconfirm
+            ;;
+    esac
+}
+
+install_package() {
+    local package=$1
+
+    case $PKG_MANAGER in
+        apt)
+            sudo apt-get install -y "$package"
+            ;;
+        dnf)
+            sudo dnf install -y "$package"
+            ;;
+        yum)
+            sudo yum install -y "$package"
+            ;;
+        zypper)
+            sudo zypper install -y "$package"
+            ;;
+        pacman)
+            sudo pacman -S --noconfirm "$package"
+            ;;
+    esac
+}
+
+detect_package_manager
+update_system
 
 install_package wget
 install_package fzf
