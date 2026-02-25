@@ -3,8 +3,6 @@
 arg1="$*"
 
 
-
-main() {
 # cosas para texto
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -26,6 +24,28 @@ BG_WHITE='\033[47m'
 
 NC='\033[0m'
 
+check_dependencies() {
+    local script_name
+    script_name=$(basename "$0")
+    local missing=()
+
+    for cmd in "$@"; do
+        if ! command -v "$cmd" &> /dev/null; then
+            missing+=("$cmd")
+        fi
+    done
+
+    if [ ${#missing[@]} -ne 0 ]; then
+        echo -e "${CYAN}[$script_name]${RED} Dependencias faltantes:${NC}"
+        for pkg in "${missing[@]}"; do
+            echo -e "${CYAN}  - $pkg ${NC}"
+        done
+        echo -e "${GREEN}Ejecuta el instalador antes de usar este script.${NC}"
+        exit 1
+    fi
+}
+
+main() {
 
 urlo="https://raw.githubusercontent.com/Zhuchii/ani-es/refs/heads/main/ani-es"
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
@@ -49,7 +69,9 @@ fi
 
 clear
 
-pagiona_siguiente() {
+check_dependencies wget fzf grep sed python3 mpv jq
+
+pagina_siguiente() {
 
 clear 
   local url=$1
@@ -110,7 +132,7 @@ END
 )
 
 
-rm -r jkanime.net
+# rm -r jkanime.net
 
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $new_urls wget > /dev/null 2>&1
 
@@ -129,7 +151,7 @@ opcion=$( (cat "resultados.txt"; echo -e "Siguiente"; echo "Anterior"; echo "Sal
 
 
 if [[ "$opcion" == "Siguiente" ]]; then
-  pagiona_siguiente $new_urls
+  pagina_siguiente $new_urls
 elif [[ "$opcion" == "Anterior" ]]; then
   pagina_anterior $new_urls
 elif [[ "$opcion" == "Salir" ]]; then
@@ -200,7 +222,7 @@ END
 )
 
 
-rm -r jkanime.net
+#rm -r jkanime.net
 
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $new_urls wget > /dev/null 2>&1
 
@@ -217,7 +239,7 @@ opcion=$( (cat "resultados.txt"; echo "Siguiente"; echo "Anterior"; echo "Salir"
 
 
 if [[ "$opcion" == "Siguiente" ]]; then
-  pagiona_siguiente $new_urls
+  pagina_siguiente $new_urls
 elif [[ "$opcion" == "Anterior" ]]; then
   pagina_anterior $new_urls
 elif [[ "$opcion" == "Salir" ]]; then
@@ -268,7 +290,7 @@ else
 fi
 
 if [[ "$opcion" == "Siguiente" ]]; then
-  pagiona_siguiente "https://jkanime.net/buscar/$query/"
+  pagina_siguiente "https://jkanime.net/buscar/$query/"
 elif [[ "$opcion" == "Anterior" ]]; then
   pagina_anterior "https://jkanime.net/buscar/$query/"
 elif [[ "$opcion" == "Salir" ]]; then
