@@ -69,7 +69,7 @@ fi
 
 clear
 
-check_dependencies wget fzf grep sed python3 mpv jq
+check_dependencies wget fzf grep sed python3 mpv jq curl
 
 pagina_siguiente() {
 
