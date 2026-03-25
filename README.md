@@ -6,6 +6,7 @@ Ver anime en español directamente desde la terminal
 CLI tool powered by **mpv + fzf**
 
 ⚡ Fast | 🎯 No ads | 🖥️ Lightweight | ❤️ Open Source
+
 ⚡ Rápido | 🎯 Sin anuncios | 🖥️ Ligero | ❤️ Open Source
 
 > Inspired by ani-cli, focused on Spanish content
