@@ -90,7 +90,8 @@ fi
 if [ -f "$INSTALL_DIR/history.db" ]; then
     exit 1
 fi
-
+sudo chmod +x ani-es
+sudo chmod +x uninstall.sh
 sudo cp "$SCRIPT_PATH" "$INSTALL_DIR"
 sudo cp "$JSON_PATH" "$INSTALL_DIR"
 if [ ! -f ~/ani-es/history.db ]; then
