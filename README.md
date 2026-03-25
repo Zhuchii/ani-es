@@ -1,50 +1,150 @@
-# ani-es
-Script de **linux** para ver anime subtitulado en español desde la terminal.
+# ani-es 🎬
 
-Todos los animes estan extraidos desde jkanime
+Watch anime from your terminal (Spanish subtitles) 🐧
+Ver anime en español directamente desde la terminal
 
-## Compatible con
-Debian, Ubuntu, Fedora, Red Hat Enterprise Linux (RHEL), CentOS, openSUSE, Arch Linux,
+CLI tool powered by **mpv + fzf**
 
-Estos y sus derivados que usen cualquiera de los siguientes **gestores de paquetes**:
-apt-get ,dnf, yum, zypper y pacman
+⚡ Fast | 🎯 No ads | 🖥️ Lightweight | ❤️ Open Source
+⚡ Rápido | 🎯 Sin anuncios | 🖥️ Ligero | ❤️ Open Source
 
-## Ejemplo de uso
-[ani-es.webm](https://github.com/user-attachments/assets/a0f905c8-5be9-4dfa-bda9-8a7f6facdd64)
+> Inspired by ani-cli, focused on Spanish content
 
-## Uso
+---
 
+**Search, stream and continue watching anime — all from your terminal.**
 
-Primero clonamos el repositorio y nos movemos a el
-```
+---
+
+![Platform](https://img.shields.io/badge/platform-linux-blue)
+![License](https://img.shields.io/github/license/Zhuchii/ani-es)
+![Stars](https://img.shields.io/github/stars/Zhuchii/ani-es?style=social)
+![Made with Bash](https://img.shields.io/badge/made%20with-bash-1f425f)
+![Uses mpv](https://img.shields.io/badge/player-mpv-orange)
+
+## 🚀 Demo
+
+![Demo](https://github.com/user-attachments/assets/a0f905c8-5be9-4dfa-bda9-8a7f6facdd64)
+
+---
+
+## ✨ Features
+
+* 🔍 Búsqueda de animes desde la terminal
+* 📺 Reproducción directa con **mpv**
+* ⏭️ Navegación entre episodios (siguiente / anterior)
+* 💾 Guarda automáticamente el último episodio visto
+* 🔄 Auto-actualización del script
+* ⚡ Interfaz interactiva con **fzf**
+* 🧠 Fallback automático para episodios en emisión
+* 📦 Compatible con múltiples distribuciones Linux
+
+---
+
+## ⚡ Instalación rápida
+
+```bash
 git clone https://github.com/Zhuchii/ani-es.git
 cd ani-es
-```
-
-
-Luego modificamos los permisos a los archivos para que sean ejecutables
-```
-chmod +x ani-es
 chmod +x install.sh
-chmod +x uninstall.sh
-```
-
-Ejecuta el archivo install.sh
-
-```
 ./install.sh
 ```
-Y listo ya puedes usar el comando ani-es desde cualquier parte del sistema para ver tus animes favoritos
 
+Después podrás usar:
 
-## Como desinstalo el script
-
-Para desinstalar el script simplemente ejecuta el archivo uninstall.sh
+```bash
+ani-es
 ```
+
+---
+
+## 🖥️ Uso
+
+```bash
+ani-es
+```
+
+O directamente:
+
+```bash
+ani-es naruto
+```
+
+---
+
+## 📦 Compatibilidad
+
+Funciona en:
+
+* Debian / Ubuntu
+* Fedora / RHEL / CentOS
+* Arch Linux
+* openSUSE
+
+Gestores soportados:
+
+* `apt-get`
+* `dnf`
+* `yum`
+* `pacman`
+* `zypper`
+
+---
+
+## 🔧 Dependencias
+
+* `python3`
+* `mpv`
+* `fzf`
+* `wget`
+* `curl`
+* `jq`
+* `grep`
+* `sed`
+
+El instalador se encarga de todo automáticamente.
+
+---
+
+## 💾 Historial
+
+El script guarda automáticamente:
+
+* Último anime visto
+* Último episodio
+
+Para que puedas continuar fácilmente después.
+
+---
+
+## ❌ Desinstalar
+
+```bash
 ./uninstall.sh
 ```
 
-## Dependencias adicionales
+---
 
-python3
+## ⚠️ Nota
 
+Este proyecto es solo una interfaz CLI para interactuar con sitios de streaming.
+No aloja contenido propio.
+
+---
+
+## ❤️ Contribuir
+
+Las contribuciones son bienvenidas:
+
+* Reportar bugs
+* Sugerir features
+* Hacer pull requests
+
+---
+
+## ⭐ Apoya el proyecto
+
+Si te gusta el proyecto, dale una estrella ⭐ en GitHub
+Ayuda mucho a que más gente lo descubra 🙌
+
+---
