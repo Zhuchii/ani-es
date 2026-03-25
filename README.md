@@ -148,7 +148,8 @@ Las contribuciones son bienvenidas:
 
 ## ⭐ Apoya el proyecto
 
-Si te gusta el proyecto, dale una estrella ⭐ en GitHub
-Ayuda mucho a que más gente lo descubra 🙌
+Si te gusta el proyecto, dale una estrella ⭐
+
+Esto ayuda mucho a que más gente lo descubra 🙌
 
 ---
