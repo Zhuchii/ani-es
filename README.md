@@ -24,7 +24,8 @@ CLI tool powered by **mpv + fzf**
 
 ## 🚀 Demo
 
-![demo]([https://github.com/user-attachments/assets/d4c1b730-d9b7-4c03-9310-0daf71c34751](https://github-production-user-asset-6210df.s3.amazonaws.com/147560218/354595790-a0f905c8-5be9-4dfa-bda9-8a7f6facdd64.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T142147Z&X-Amz-Expires=300&X-Amz-Signature=15b4f0fff2a707931f46fb80468268d4b11bf34125b3ba5ba9f7991b46cde0d4&X-Amz-SignedHeaders=host))
+[demo](https://github.com/user-attachments/assets/8e6def8d-8698-4f2f-ae9e-b6ea1691b044)
+
 
 
 ---
