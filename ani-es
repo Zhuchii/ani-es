@@ -45,6 +45,19 @@ check_dependencies() {
     fi
 }
 
+detect_env() {
+    # WSL (1 o 2)
+    if grep -qi microsoft /proc/version 2>/dev/null || [ -n "$WSL_DISTRO_NAME" ]; then
+        echo "wsl"
+    # Termux (Android)
+    elif [ -n "$PREFIX" ] && [[ "$PREFIX" == *com.termux* ]]; then
+        echo "termux"
+    # Linux normal
+    else
+        echo "linux"
+    fi
+}
+
 main() {
 
 urlo="https://raw.githubusercontent.com/Zhuchii/ani-es/refs/heads/main/ani-es"
@@ -498,7 +511,34 @@ END
 rm -r jkanime.net mediafire.com > /dev/null 2>&1
 
 
-wget -qO-  "$src_contenido" | mpv --force-media-title="$opcion-$capi" -> /dev/null 2>&1
+ENV=$(detect_env)
+case "$ENV" in
+    wsl)
+        # WSL
+        if command -v mpv.exe >/dev/null 2>&1; then
+            wget -qO-  "$src_contenido" | mpv.exe --force-media-title="$opcion-$capi" -> /dev/null 2>&1
+        else
+            echo "❌ mpv.exe no encontrado en Windows PATH"
+        fi
+        ;;
+    termux)
+        # Termux usa VLC directo si existe si no fallback al selector
+        if pm list packages | grep -q 'org.videolan.vlc'; then
+            am start -a android.intent.action.VIEW -d "$src_contenido" -n org.videolan.vlc/org.videolan.vlc.gui.video.VideoPlayerActivity
+        else
+            # Fallback: abrir selector de apps
+            termux-open-url "$src_contenido"
+        fi
+        ;;
+    linux)
+        # Linux normal
+        if command -v mpv >/dev/null 2>&1; then
+            wget -qO-  "$src_contenido" | mpv --force-media-title="$opcion-$capi" -> /dev/null 2>&1
+        fi
+        ;;
+esac
+
+
 
 
 op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras") | tac | fzf --prompt="Selecciona una opción: " --height=7 --border --info=inline --margin=1,1,0,0)
