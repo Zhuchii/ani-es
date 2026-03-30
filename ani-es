@@ -341,15 +341,18 @@ if [ -n "$value" ] && [ "$value" != "null" ]; then
 else
     echo ""
 fi
-
+nuevaurl="${nuevaurl%%/}"
 rm -r jkanime.net > /dev/null 2>&1
 
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p $nuevaurl > /dev/null 2>&1
 
 url_without_https="${nuevaurl/https:\/\//}"
 
-num_episodios=$(grep -oP '<li><span>Episodios:</span> \K\d+' "$url_without_https" | tail -n 1)
-
+if [ -d "$url_without_https" ]; then
+    num_episodios=$(grep -oP '<li><span>Episodios:</span> \K\d+' "$url_without_https/index.html" | tail -n 1)
+else
+    num_episodios=$(grep -oP '<li><span>Episodios:</span> \K\d+' "$url_without_https" | tail -n 1)
+fi
 
 if [ -z "$num_episodios" ] || [ "$num_episodios" -eq 0 ]; then
     titulo_anime=$(grep -oP '<title>\K[^|-]+' "$url_without_https" | sed 's/ $//')
@@ -397,7 +400,13 @@ if row:
 END
 )
 
-tipo=$(grep -oP '<span>Tipo:</span> \K[^<]+' $url_without_https | tail -n 1)
+if [ -d "$url_without_https" ]; then
+    tipo=$(grep -oP '<span>Tipo:</span> \K[^<]+' $url_without_https/index.html | tail -n 1)
+else
+    tipo=$(grep -oP '<span>Tipo:</span> \K[^<]+' $url_without_https | tail -n 1)
+fi
+
+
 
 echo -e "Ultimo episodio visto: $last_cap"
 echo ""
@@ -417,19 +426,33 @@ clear
 if [ "$tipo" == "Pelicula" ]; then
   capi="pelicula"
 fi
+
 capurl="$nuevaurl/$capi"
 
 
 videocap(){
 capa=$1
+
 wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$capa" > /dev/null 2>&1
 
 primera_carpeta=$(ls -d jkanime.net/*/ 2> /dev/null | head -n 1)
 primera_carpeta="${primera_carpeta%/}"
 pes=$(find "$primera_carpeta/" -maxdepth 1 -type f -printf "%f\n" | head -n 1)
-archivor="$url_without_https/$capi"
+archivor="${url_without_https}/${capi}"
+archivor="${archivor//\/\//\/}"
+
 tre=$(grep -oP '<iframe[^>]+src="/jk.php\K[^"]*' "$archivor")
-if ! ls jkanime.net/jk.php* 1> /dev/null 2>&1; then
+# jkplayer (nuevo)
+if ls jkanime.net/jkplayer/um* 1> /dev/null 2>&1; then
+  src_contenido=$(grep -A 1 "video: {" jkanime.net/jkplayer/um* | sed -n -e "s/.*url: '\(.*\)',.*/\1/p" -e "s/.*type: '\(.*\)'.*/\1/p")
+
+# jk.php (antiguo) por si acaso
+elif ls jkanime.net/jk.php* 1> /dev/null 2>&1; then
+  wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$tre" > /dev/null 2>&1
+  src_contenido=$(grep -A 1 "video: {" jkanime.net/jk.php* | sed -n -e "s/.*url: '\(.*\)',.*/\1/p" -e "s/.*type: '\(.*\)'.*/\1/p")
+
+# Mediafire
+else
   servers_line=$(grep -oP 'var servers = \[.*?\];' "$archivor")
 
   if [ -n "$servers_line" ]; then
@@ -451,16 +474,12 @@ print(base64.b64decode(mp4upload_server['remote']).decode('utf-8'))
 END
     )
 
-wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$src_contenid" > /dev/null 2>&1
-index=$(find mediafire.com -type f -name "index.html")
-src_contenido=$(grep -oP '(?<=href=")[^"]*' "$index" | grep 'https://download')
-  
+    wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$src_contenid" > /dev/null 2>&1
+    index=$(find mediafire.com -type f -name "index.html")
+    src_contenido=$(grep -oP '(?<=href=")[^"]*' "$index" | grep 'https://download')
   else
     echo ""
   fi
-else
-  wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -p "$tre" > /dev/null 2>&1
-  src_contenido="$(grep -A 1 "video: {" jkanime.net/jk.php* | sed -n -e "s/.*url: '\(.*\)',.*/\1/p" -e "s/.*type: '\(.*\)'.*/\1/p")"
 fi
 
 if [ "$tipo" == "Pelicula" ]; then
@@ -516,7 +535,7 @@ case "$ENV" in
     wsl)
         # WSL
         if command -v mpv.exe >/dev/null 2>&1; then
-            wget -qO-  "$src_contenido" | mpv.exe --force-media-title="$opcion-$capi" -> /dev/null 2>&1
+            mpv.exe --force-media-title="$opcion-$capi" "$src_contenido" -> /dev/null 2>&1
         else
             echo "❌ mpv.exe no encontrado en Windows PATH"
         fi
@@ -533,7 +552,7 @@ case "$ENV" in
     linux)
         # Linux normal
         if command -v mpv >/dev/null 2>&1; then
-            wget -qO-  "$src_contenido" | mpv --force-media-title="$opcion-$capi" -> /dev/null 2>&1
+            mpv --force-media-title="$opcion-$capi" "$src_contenido" -> /dev/null 2>&1
         fi
         ;;
 esac
