@@ -45,7 +45,38 @@ CLI tool powered by **mpv + fzf**
 
 ---
 
-## ⚡ Instalación rápida
+## ⚡ Instalación
+
+<details><summary>Windows (WSL)</summary>
+
+Abre Powershell y pega esto
+```bash
+wsl --install -d Ubuntu
+```
+Luego desde la barra de tareas busca ubuntu y ejecuta
+
+Ya por ultimo solo queda instalar el script
+
+```bash
+git clone https://github.com/Zhuchii/ani-es.git
+cd ani-es
+chmod +x install.sh
+./install.sh
+```
+
+Después podrás usar:
+
+```bash
+ani-es
+```
+
+
+### ⚠️ Nota sobre mpv
+Para poder usar mpv has de instalar mpv de descargarte mpv desde su [pagina oficial](https://mpv.io/installation/) y añadirlo al PATH de windows
+
+</details>
+
+<details><summary>Linux</summary>
 
 ```bash
 git clone https://github.com/Zhuchii/ani-es.git
@@ -73,6 +104,8 @@ O directamente:
 ```bash
 ani-es naruto
 ```
+
+</details>
 
 ---
 
