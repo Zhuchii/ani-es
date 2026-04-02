@@ -91,6 +91,7 @@ Después podrás usar:
 ani-es
 ```
 
+</details>
 ---
 
 ## 🖥️ Uso
@@ -104,8 +105,6 @@ O directamente:
 ```bash
 ani-es naruto
 ```
-
-</details>
 
 ---
 
