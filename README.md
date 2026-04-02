@@ -18,7 +18,7 @@ CLI tool powered by **mpv + fzf**
 
 ---
 
-![Platform](https://img.shields.io/badge/platform-linux-blue)
+![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-blue)
 ![License](https://img.shields.io/github/license/Zhuchii/ani-es)
 ![Made with Bash](https://img.shields.io/badge/made%20with-bash-1f425f)
 ![Uses mpv](https://img.shields.io/badge/player-mpv-orange)
