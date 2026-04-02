@@ -92,6 +92,7 @@ ani-es
 ```
 
 </details>
+
 ---
 
 ## 🖥️ Uso
