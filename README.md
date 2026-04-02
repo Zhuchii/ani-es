@@ -54,7 +54,8 @@ Abre Powershell y pega esto
 wsl --install -d Ubuntu
 ```
 Luego desde la barra de tareas busca ubuntu y ejecuta
-<img src="https://github.com/user-attachments/assets/067dfa4e-00b0-4681-ac07-c38508fa6bfe" />
+
+<img src="https://github.com/user-attachments/assets/067dfa4e-00b0-4681-ac07-c38508fa6bfe" width="600" />
 
 Ya por ultimo solo queda instalar el script
 
