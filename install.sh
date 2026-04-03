@@ -69,6 +69,7 @@ install_package sed
 install_package python3
 install_package mpv
 install_package curl
+install_package jq
 
 echo "Todas las dependencias han sido instaladas correctamente."
 
