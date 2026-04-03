@@ -66,12 +66,17 @@ chmod +x install.sh
 ./install.sh
 ```
 
-Después podrás usar:
+Después podrás usar (desde Ubuntu):
 
 ```bash
 ani-es
 ```
 
+O bien desde el CMD de Windows usando:
+
+```bash
+wsl ani-es
+```
 
 ### ⚠️ Nota sobre mpv
 Para poder usar mpv has de instalar mpv de descargarte mpv desde su [pagina oficial](https://mpv.io/installation/) y añadirlo al PATH de windows
