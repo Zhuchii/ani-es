@@ -51,8 +51,15 @@ CLI tool powered by **mpv + fzf**
 
 Abre Powershell y pega esto
 ```bash
+wsl --install
+```
+
+Reiniciar el ordenador y luego en el Powershell ejecutar esto:
+
+```bash
 wsl --install -d Ubuntu
 ```
+
 Luego desde la barra de tareas busca ubuntu y ejecuta
 
 <img src="https://github.com/user-attachments/assets/067dfa4e-00b0-4681-ac07-c38508fa6bfe" width="600" />
@@ -60,19 +67,16 @@ Luego desde la barra de tareas busca ubuntu y ejecuta
 Ya por ultimo solo queda instalar el script
 
 ```bash
+cd ~/
 git clone https://github.com/Zhuchii/ani-es.git
 cd ani-es
 chmod +x install.sh
 ./install.sh
 ```
 
-Después podrás usar (desde Ubuntu):
+Cerramos el ubuntu
 
-```bash
-ani-es
-```
-
-O bien desde el CMD de Windows usando:
+Ya podras ejecutarlo desde el CMD de Windows usando:
 
 ```bash
 wsl ani-es
