@@ -75,6 +75,7 @@ ani-es
 
 ### ⚠️ Nota sobre mpv
 Para poder usar mpv has de instalar mpv de descargarte mpv desde su [pagina oficial](https://mpv.io/installation/) y añadirlo al PATH de windows
+
 Si no sabes como hacerlo hecha un vistazo a [esta guia](https://github.com/Zhuchii/ani-es/wiki/C%C3%B3mo-descargar-y-a%C3%B1adir-mpv-al-PATH-en-Windows)
 
 </details>
