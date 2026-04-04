@@ -34,7 +34,7 @@ show_help() {
 }
 
 show_version() {
-    echo -e "${CYAN}ani-es v$VERSION${NC}"
+    echo -e "$ani-es {CYAN}v$VERSION${NC}"
 }
 
 # parseo de argumentos
