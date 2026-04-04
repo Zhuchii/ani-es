@@ -2,8 +2,6 @@
 
 VERSION="1.1.0"
 
-arg1="$*"
-
 
 # cosas para texto
 RED='\033[0;31m'
@@ -25,6 +23,41 @@ BG_WHITE='\033[47m'
 
 
 NC='\033[0m'
+
+
+show_help() {
+    echo "Uso: ani-es [opciones] [busqueda]"
+    echo ""
+    echo "Opciones:"
+    echo "  -h, --help       Mostrar ayuda"
+    echo "  -v, --version    Mostrar versión"
+}
+
+show_version() {
+    echo -e "${CYAN}ani-es v$VERSION${NC}"
+}
+
+# parseo de argumentos
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -v|--version)
+            show_version
+            exit 0
+            ;;
+        *)
+            break
+            ;;
+    esac
+    shift
+done
+
+
+arg1="$*"
+
 
 check_dependencies() {
     local script_name
