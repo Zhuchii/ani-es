@@ -17,6 +17,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Stop if commit is from bot
+        run: |
+          if [[ "$(git log -1 --pretty=%B)" == *"[skip ci]"* ]]; then
+            echo "Skipping bot commit"
+            exit 0
+          fi
+
       - name: Get last commit message
         id: commit
         run: |
@@ -24,10 +31,10 @@ jobs:
           git log -1 --pretty=%B >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Read current version
+      - name: Read current version (línea 3)
         id: current
         run: |
-          VERSION=$(grep VERSION ani-es | cut -d '"' -f2)
+          VERSION=$(sed -n '3s/.*"\(.*\)".*/\1/p' ani-es)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Bump version
@@ -48,7 +55,7 @@ jobs:
           elif [[ "$MSG" == fix:* ]]; then
             PATCH=$((PATCH + 1))
           else
-            echo "skip=true"
+            echo "No version change"
             exit 0
           fi
 
@@ -59,18 +66,18 @@ jobs:
         if: steps.bump.outputs.new_version != ''
         run: |
           VERSION="${{ steps.bump.outputs.new_version }}"
-          sed -i 's/^VERSION=.*/VERSION="'"$VERSION"'"/' ani-es
+          sed -i '3s/.*/VERSION="'"$VERSION"'"/' ani-es
 
-      - name: Amend commit
+      - name: Amend commit (sin crear commit nuevo)
         if: steps.bump.outputs.new_version != ''
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
           git add ani-es
-          git commit --amend --no-edit
+          git commit --amend --no-edit --no-verify
 
-      - name: Force push
+      - name: Force push limpio
         if: steps.bump.outputs.new_version != ''
         run: |
           git push --force
@@ -79,5 +86,5 @@ jobs:
         if: steps.bump.outputs.new_version != ''
         run: |
           VERSION=${{ steps.bump.outputs.new_version }}
-          git tag "v$VERSION"
-          git push origin "v$VERSION"
+          git tag -f "v$VERSION"
+          git push origin "v$VERSION" --force
