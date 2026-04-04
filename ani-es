@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.1.0"
+VERSION="1.1.1"
 
 
 # cosas para texto
@@ -34,7 +34,7 @@ show_help() {
 }
 
 show_version() {
-    echo -e "$ani-es {CYAN}v$VERSION${NC}"
+    echo -e "$ani-es {PURPLE}v$VERSION${NC}"
 }
 
 # parseo de argumentos
