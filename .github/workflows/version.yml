@@ -1,0 +1,83 @@
+name: Auto Version (clean)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get last commit message
+        id: commit
+        run: |
+          echo "msg<<EOF" >> $GITHUB_OUTPUT
+          git log -1 --pretty=%B >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Read current version
+        id: current
+        run: |
+          VERSION=$(grep VERSION ani-es | cut -d '"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Bump version
+        id: bump
+        run: |
+          VERSION="${{ steps.current.outputs.version }}"
+          MSG="${{ steps.commit.outputs.msg }}"
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+          if [[ "$MSG" == *"BREAKING CHANGE"* ]]; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif [[ "$MSG" == feat:* ]]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          elif [[ "$MSG" == fix:* ]]; then
+            PATCH=$((PATCH + 1))
+          else
+            echo "skip=true"
+            exit 0
+          fi
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update version in script
+        if: steps.bump.outputs.new_version != ''
+        run: |
+          VERSION="${{ steps.bump.outputs.new_version }}"
+          sed -i 's/^VERSION=.*/VERSION="'"$VERSION"'"/' ani-es
+
+      - name: Amend commit
+        if: steps.bump.outputs.new_version != ''
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          git add ani-es
+          git commit --amend --no-edit
+
+      - name: Force push
+        if: steps.bump.outputs.new_version != ''
+        run: |
+          git push --force
+
+      - name: Create tag
+        if: steps.bump.outputs.new_version != ''
+        run: |
+          VERSION=${{ steps.bump.outputs.new_version }}
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
