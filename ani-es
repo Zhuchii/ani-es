@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.1.1"
+VERSION="1.2.0"
 
 
 # cosas para texto
@@ -34,7 +34,7 @@ show_help() {
 }
 
 show_version() {
-    echo -e "$ani-es {PURPLE}v$VERSION${NC}"
+    echo -e "ani-es ${PURPLE}v${VERSION}${NC}"
 }
 
 # parseo de argumentos
@@ -334,7 +334,7 @@ else
   echo -e "Pagina: 1 ${NC}"
 
   echo -e "Resultados para: $query"
-  opcion=$( (cat "resultados.txt"; echo "Siguiente"; echo "Anterior"; echo "Salir") | tac | fzf --prompt="Selecciona una opción: " --height=19 --border --info=inline --margin=1,1,0,0)
+  opcion=$( (cat "resultados.txt"; echo -e "{$RED}Salir{$NC}") | tac | fzf --prompt="Selecciona una opción: " --height=~20 --border --info=inline --margin=1,1,0,0)
 fi
 
 if [[ "$opcion" == "Siguiente" ]]; then
@@ -444,18 +444,18 @@ fi
 
 
 echo -e "Ultimo episodio visto: $last_cap"
-echo ""
-echo -e "Episodios: $PURPLE $num_episodios $WHITE"
-echo '|'
-
 if [ -z "$num_episodios" ]; then
   echo -e "Enlace ${CYAN}$nuevaurl${NC} no válido. Por favor ve a ${GREEN} https://github.com/Zhuchii/ani-es ${NC} y abre un issue especificando el enlace y el anime que estabas intentando ver. Lo corregiré y actualizaré el script ;)"
   echo "$url_without_https"
   exit
 fi
 
+capi=$(seq 1 "$num_episodios" | fzf \
+  --prompt="Episodio: " \
+  --height=~30 \
+  --border \
+  --reverse)
 
-read -p"Episodio: " capi
 clear
 
 if [ "$tipo" == "Pelicula" ]; then
