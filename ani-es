@@ -334,7 +334,7 @@ else
   echo -e "Pagina: 1 ${NC}"
 
   echo -e "Resultados para: $query"
-  opcion=$( (cat "resultados.txt"; echo -e "{$RED}Salir{$NC}") | tac | fzf --prompt="Selecciona una opción: " --height=~20 --border --info=inline --margin=1,1,0,0)
+  opcion=$( (cat "resultados.txt"; echo "Salir") | tac | fzf --prompt="Selecciona una opción: " --height=~20 --border --info=inline --margin=1,1,0,0)
 fi
 
 if [[ "$opcion" == "Siguiente" ]]; then
