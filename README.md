@@ -1,6 +1,6 @@
 # ani-es 🎬
 
-Watch anime from your terminal (Spanish subtitles) 🐧
+Watch anime from your terminal (Spanish subtitles) 
 
 Ver anime en español directamente desde la terminal
 
