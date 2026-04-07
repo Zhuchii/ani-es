@@ -1,4 +1,4 @@
-# Ver anime en español directamente desde la terminal
+# Ver anime en español desde la terminal
 
 Watch anime from your terminal (Spanish subtitles) 
 
