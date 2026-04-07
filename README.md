@@ -1,8 +1,6 @@
-# ani-es 🎬
+# Ver anime en español directamente desde la terminal
 
 Watch anime from your terminal (Spanish subtitles) 
-
-Ver anime en español directamente desde la terminal
 
 CLI tool powered by **mpv + fzf**
 
