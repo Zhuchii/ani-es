@@ -1,7 +1,9 @@
 #!/bin/bash
 
-VERSION="1.2.0"
+VERSION="1.3.0"
 
+CONTINUE=0
+progress="00:00:00"
 
 # cosas para texto
 RED='\033[0;31m'
@@ -26,11 +28,14 @@ NC='\033[0m'
 
 
 show_help() {
-    echo "Uso: ani-es [opciones] [busqueda]"
     echo ""
-    echo "Opciones:"
-    echo "  -h, --help       Mostrar ayuda"
-    echo "  -v, --version    Mostrar versión"
+    echo "    Uso: ani-es [opciones] [busqueda]"
+    echo ""
+    echo "    Opciones:"
+    echo "      -h, --help       Mostrar ayuda"
+    echo "      -v, --version    Mostrar versión"
+    echo "      -c, --continue   Continua el anime en donde ultimo lo dejaste"
+    echo ""
 }
 
 show_version() {
@@ -47,6 +52,9 @@ while [[ $# -gt 0 ]]; do
         -v|--version)
             show_version
             exit 0
+            ;;
+        -c|--continue)
+            CONTINUE=1
             ;;
         *)
             break
@@ -335,6 +343,7 @@ else
 
   echo -e "Resultados para: $query"
   opcion=$( (cat "resultados.txt"; echo "Salir") | tac | fzf --prompt="Selecciona una opción: " --height=~20 --border --info=inline --margin=1,1,0,0)
+  clear
 fi
 
 if [[ "$opcion" == "Siguiente" ]]; then
@@ -423,7 +432,8 @@ if cursor.fetchone()[0] == 0:
         CREATE TABLE animes (
             id INTEGER PRIMARY KEY,
             anime TEXT,
-            last_cap TEXT
+            last_cap TEXT,
+            progress TEXT
         )
     ''')
 conect.commit()
@@ -450,17 +460,43 @@ if [ -z "$num_episodios" ]; then
   exit
 fi
 
-capi=$(seq 1 "$num_episodios" | fzf \
-  --prompt="Episodio: " \
-  --height=~30 \
-  --border \
-  --reverse)
+
+if [ "$CONTINUE" == 1 ]; then
+  capi=$last_cap
+  progress=$(python3 - <<END
+import sqlite3
+import os
+
+def conection():
+    home_dir = os.path.expanduser("~")
+    db_path = os.path.join(home_dir, "ani-es", "history.db")
+    return sqlite3.connect(db_path)
+
+conect = conection()
+cursor = conect.cursor()
+
+cursor.execute(f'SELECT progress from animes WHERE anime="$titulo_elegido"')
+
+response=cursor.fetchone()
+
+print(response[0])
+END
+)
+
+else
+  capi=$(seq 1 "$num_episodios" | fzf \
+    --prompt="Episodio: " \
+    --height=~30 \
+    --border \
+    --reverse)
+fi
 
 clear
 
 if [ "$tipo" == "Pelicula" ]; then
   capi="pelicula"
 fi
+
 
 capurl="$nuevaurl/$capi"
 
@@ -521,8 +557,39 @@ if [ "$tipo" == "Pelicula" ]; then
   capi=1
 fi
 
+clear
 
-echo "Reproduciendo... Capitulo: $capi"
+echo "Capitulo: $capi"
+
+rm -r jkanime.net mediafire.com > /dev/null 2>&1
+
+ENV=$(detect_env)
+pos=0
+
+case "$ENV" in
+    wsl)
+        if command -v mpv.exe >/dev/null 2>&1; then
+            pos=$(mpv.exe --start=$progress --msg-level=ffmpeg=no --force-media-title="$opcion-$capi" "$src_contenido" | grep -oE 'AV: [0-9]{2}:[0-9]{2}:[0-9]{2}' | tail -n 1  | sed 's/AV: //g' 2>&1)
+        else
+            echo "mpv.exe no encontrado en Windows PATH"
+        fi
+        ;;
+    termux)
+        if pm list packages | grep -q 'org.videolan.vlc'; then
+            am start -a android.intent.action.VIEW -d "$src_contenido" -n org.videolan.vlc/org.videolan.vlc.gui.video.VideoPlayerActivity
+            pos=0
+        else
+            termux-open-url "$src_contenido"
+            pos=0
+        fi
+        ;;
+    linux)
+        if command -v mpv >/dev/null 2>&1; then
+            pos=$(mpv --start=$progress -v --msg-level=ffmpeg=no --force-media-title="$opcion-$capi" "$src_contenido" | grep -oE 'AV: [0-9]{2}:[0-9]{2}:[0-9]{2}' | tail -n 1  | sed 's/AV: //g' 2>&1)
+        fi
+        ;;
+esac
+
 python3 - <<END
 import sqlite3
 import os
@@ -535,70 +602,61 @@ def conection():
 anime = '$titulo_elegido'
 capi = '$capi'
 
+progress = "$pos"
+
+
 conect = conection()
 cursor = conect.cursor()
 
+# Crear tabla si no existe
 cursor.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='animes' ''')
 if cursor.fetchone()[0] == 0:
     cursor.execute('''
         CREATE TABLE animes (
             id INTEGER PRIMARY KEY,
             anime TEXT,
-            last_cap TEXT
+            last_cap TEXT,
+            progress TEXT
         )
     ''')
-conect.commit()
+    conect.commit()
+
+
+cursor.execute("PRAGMA table_info(animes)")
+columns = [col[1] for col in cursor.fetchall()]
+
+if "progress" not in columns:
+    cursor.execute("ALTER TABLE animes ADD COLUMN progress TEXT DEFAULT 0")
+    conect.commit()
+
+# Insert / Update
 cursor.execute('SELECT * FROM animes WHERE anime = ?', (anime,))
 row = cursor.fetchone()
+
 if row is None:
-  cursor.execute('INSERT INTO animes (anime, last_cap) VALUES (?, ?)', (anime, capi,))
-  conect.commit()
+    cursor.execute(
+        'INSERT INTO animes (anime, last_cap, progress) VALUES (?, ?, ?)',
+        (anime, capi, progress)
+    )
 else:
-  cursor.execute('SELECT *FROM animes WHERE anime = ?', [anime,])
-  row = cursor.fetchone()
-  if int(row[2])<int(capi):
-    cursor.execute("UPDATE animes SET last_cap = ? WHERE anime = ?", (capi, anime))
-    conect.commit()
+    if int(row[2]) < int(capi):
+        cursor.execute(
+            "UPDATE animes SET last_cap = ?, progress = ? WHERE anime = ?",
+            (capi, progress, anime)
+        )
+    else:
+        cursor.execute(
+            "UPDATE animes SET progress = ? WHERE anime = ?",
+            (progress, anime)
+        )
+
 conect.commit()
 END
-
-rm -r jkanime.net mediafire.com > /dev/null 2>&1
-
-
-ENV=$(detect_env)
-case "$ENV" in
-    wsl)
-        # WSL
-        if command -v mpv.exe >/dev/null 2>&1; then
-            mpv.exe --force-media-title="$opcion-$capi" "$src_contenido" -> /dev/null 2>&1
-        else
-            echo "❌ mpv.exe no encontrado en Windows PATH"
-        fi
-        ;;
-    termux)
-        # Termux usa VLC directo si existe si no fallback al selector
-        if pm list packages | grep -q 'org.videolan.vlc'; then
-            am start -a android.intent.action.VIEW -d "$src_contenido" -n org.videolan.vlc/org.videolan.vlc.gui.video.VideoPlayerActivity
-        else
-            # Fallback: abrir selector de apps
-            termux-open-url "$src_contenido"
-        fi
-        ;;
-    linux)
-        # Linux normal
-        if command -v mpv >/dev/null 2>&1; then
-            mpv --force-media-title="$opcion-$capi" "$src_contenido" -> /dev/null 2>&1
-        fi
-        ;;
-esac
-
-
-
 
 op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras") | tac | fzf --prompt="Selecciona una opción: " --height=7 --border --info=inline --margin=1,1,0,0)
 
 if [[ "$op" == "Siguiente" ]]; then
-
+    progress="00:00:00"
   capi=$((capi + 1))
 python3 - <<END
 import sqlite3
@@ -621,7 +679,8 @@ if cursor.fetchone()[0] == 0:
         CREATE TABLE animes (
             id INTEGER PRIMARY KEY,
             anime TEXT,
-            last_cap TEXT
+            last_cap TEXT,
+            progress TEXT
         )
     ''')
 conect.commit()
@@ -640,7 +699,7 @@ conect.commit()
 END
   videocap "$nuevaurl/$capi"
 elif [[ "$op" == "Retroceder" ]]; then
-
+  progress="00:00:00"
   capi=$((capi - 1))
   videocap "$nuevaurl/$capi"
 elif [[ "$opcion" == "Atras" ]]; then
