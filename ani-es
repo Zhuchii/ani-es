@@ -4,6 +4,9 @@ VERSION="1.3.1"
 
 CONTINUE=0
 FAVORITES=0
+POPULAR=0
+ALEATORIO=0
+AUTO_EXACT=0
 progress="00:00:00"
 
 # cosas para texto
@@ -37,6 +40,8 @@ show_help() {
     echo "      -v, --version    Mostrar versión"
     echo "      -c, --continue   Continua el anime en donde ultimo lo dejaste"
     echo "      -f, --favorites  Muestra tu lista de animes favoritos"
+    echo "      -p, --popular    Muestra los mas populares de la temporada actual"
+    echo "      -r, --random     Muestra 10 animes al azar para descubrir"
     echo ""
 }
 
@@ -60,6 +65,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -f|--favorites)
             FAVORITES=1
+            ;;
+        -p|--popular)
+            POPULAR=1
+            ;;
+        -r|--random)
+            ALEATORIO=1
             ;;
         *)
             break
@@ -123,6 +134,13 @@ capi = os.environ.get("ANIES_CAPI", "")
 progress = os.environ.get("ANIES_PROGRESS", "")
 
 
+def to_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return -1
+
+
 def conection():
     home_dir = os.path.expanduser("~")
     db_path = os.path.join(home_dir, "ani-es", "history.db")
@@ -169,7 +187,7 @@ elif action == "save":
             "INSERT INTO animes (anime, last_cap, progress) VALUES (?, ?, ?)",
             (anime, capi, progress),
         )
-    elif int(row[2]) < int(capi):
+    elif to_int(row[2]) < to_int(capi):
         cursor.execute(
             "UPDATE animes SET last_cap = ?, progress = ? WHERE anime = ?",
             (capi, progress, anime),
@@ -188,7 +206,7 @@ elif action == "set_last_cap":
         cursor.execute(
             "INSERT INTO animes (anime, last_cap) VALUES (?, ?)", (anime, capi)
         )
-    elif int(row[2]) < int(capi):
+    elif to_int(row[2]) < to_int(capi):
         cursor.execute(
             "UPDATE animes SET last_cap = ? WHERE anime = ?", (capi, anime)
         )
@@ -423,7 +441,64 @@ fi
 
 }
 
-if [ "$FAVORITES" == 1 ]; then
+if [ "$POPULAR" == 1 ]; then
+  echo -e "${BLUE}Buscando los mas populares de la temporada...${NC}"
+  populares=$(curl -s --max-time 25 "https://api.jikan.moe/v4/seasons/now?limit=25" \
+    | jq -r '[.data[]] | unique_by(.mal_id) | sort_by(.members // 0) | reverse | .[:15][]
+        | (.aired.prop.from.year // "?" | tostring) as $d
+        | (if .aired.prop.to.year then (.aired.prop.to.year|tostring)
+           elif .status == "Currently Airing" then "en emision"
+           elif .status == "Not yet aired" then "sin estrenar"
+           else null end) as $h
+        | (if $h == null then $d elif $d == $h then $d else "\($d) - \($h)" end) as $fechas
+        | "\(.title)\t\($fechas)"' 2>/dev/null)
+
+  if [[ -z "$populares" ]]; then
+    echo -e "${RED}No pude obtener la lista de populares (sin conexion o la API esta caida).${NC}"
+    exit 1
+  fi
+
+  seleccion=$(echo "$populares" | fzf --delimiter='\t' --with-nth=1,2 \
+    --prompt="Top temporada: " --height=~25 --border --info=inline --margin=1,1,0,0 \
+    --header="Populares de esta temporada  ·  Enter para ver")
+
+  if [[ -z "$seleccion" ]]; then
+    exit 0
+  fi
+
+  oracion=$(echo "$seleccion" | cut -f1)
+  AUTO_EXACT=1
+  clear
+elif [ "$ALEATORIO" == 1 ]; then
+  echo -e "${BLUE}Eligiendo 10 animes al azar...${NC}"
+  pagina=$(( (RANDOM % 15) + 1 ))
+  aleatorios=$(curl -s --max-time 20 "https://api.jikan.moe/v4/top/anime?page=$pagina" \
+    | jq -r '.data[]
+        | (.aired.prop.from.year // "?" | tostring) as $d
+        | (if .aired.prop.to.year then (.aired.prop.to.year|tostring)
+           elif .status == "Currently Airing" then "en emision"
+           elif .status == "Not yet aired" then "sin estrenar"
+           else null end) as $h
+        | (if $h == null then $d elif $d == $h then $d else "\($d) - \($h)" end) as $fechas
+        | "\(.title)\t\($fechas)"' 2>/dev/null | shuf -n 10)
+
+  if [[ -z "$aleatorios" ]]; then
+    echo -e "${RED}No pude obtener animes (sin conexion o la API esta caida).${NC}"
+    exit 1
+  fi
+
+  seleccion=$(echo "$aleatorios" | fzf --delimiter='\t' --with-nth=1,2 \
+    --prompt="Aleatorios: " --height=~20 --border --info=inline --margin=1,1,0,0 \
+    --header="10 al azar  ·  Enter para ver")
+
+  if [[ -z "$seleccion" ]]; then
+    exit 0
+  fi
+
+  oracion=$(echo "$seleccion" | cut -f1)
+  AUTO_EXACT=1
+  clear
+elif [ "$FAVORITES" == 1 ]; then
   while true; do
     favoritos=$(db list_favorites)
 
@@ -455,6 +530,7 @@ if [ "$FAVORITES" == 1 ]; then
     fi
 
     oracion="$anime_sel"
+    AUTO_EXACT=1
     clear
     break
   done
@@ -490,6 +566,9 @@ num_resultados=$(wc -l < resultados.txt)
 num_animes=$(wc -l < resultados.txt)
 if [[ "$num_animes" == "1" ]]; then
   opcion=$(cat resultados.txt)
+  echo Cargando...
+elif [ "$AUTO_EXACT" == 1 ] && grep -qxF "$oracion" resultados.txt; then
+  opcion="$oracion"
   echo Cargando...
 else
   echo -e "Pagina: 1 ${NC}"
@@ -546,32 +625,32 @@ wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 url_without_https="${nuevaurl/https:\/\//}"
 
 if [ -d "$url_without_https" ]; then
-    token=$(curl -s -c cookies.txt "$nuevaurl" | grep -oP 'meta name="csrf-token" content="\K[^"]+')
+    token=$(curl -s -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -c cookies.txt "$nuevaurl" | grep -oP 'meta name="csrf-token" content="\K[^"]+')
     api_url_base=$(grep -oP "url:\s*'\Khttps://jkanime\.net/ajax/episodes/\d+/?" "$url_without_https/index.html")
 
     if [ ! -z "$api_url_base" ] && [ ! -z "$token" ]; then
         
-        json_response=$(curl -s -X POST "${api_url_base}" \
+        json_response=$(curl -s -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -X POST "${api_url_base}" \
             -b cookies.txt \
             -H "X-Requested-With: XMLHttpRequest" \
             -H "X-CSRF-TOKEN: $token" \
             --data-urlencode "_token=$token")
         
-        num_episodios=$(echo "$json_response" | grep -oP '"total":\s*\K\d+')
+        num_episodios=$(echo "$json_response" | grep -oP '"total":\s*\K\d+' | head -n 1)
     fi
 else
-    token=$(curl -s -c cookies.txt "$nuevaurl" | grep -oP 'meta name="csrf-token" content="\K[^"]+')
+    token=$(curl -s -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -c cookies.txt "$nuevaurl" | grep -oP 'meta name="csrf-token" content="\K[^"]+')
     api_url_base=$(grep -oP "url:\s*'\Khttps://jkanime\.net/ajax/episodes/\d+/?" "$url_without_https")
 
     if [ ! -z "$api_url_base" ] && [ ! -z "$token" ]; then
         
-        json_response=$(curl -s -X POST "${api_url_base}" \
+        json_response=$(curl -s -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -X POST "${api_url_base}" \
             -b cookies.txt \
             -H "X-Requested-With: XMLHttpRequest" \
             -H "X-CSRF-TOKEN: $token" \
             --data-urlencode "_token=$token")
 
-        num_episodios=$(echo "$json_response" | grep -oP '"total":\s*\K\d+')
+        num_episodios=$(echo "$json_response" | grep -oP '"total":\s*\K\d+' | head -n 1)
     fi
 fi
 
@@ -606,16 +685,29 @@ fi
 
 
 
-if [ "$CONTINUE" == 1 ]; then
+if [ "$CONTINUE" == 1 ] && [[ "$last_cap" =~ ^[0-9]+$ ]]; then
   capi=$last_cap
   progress=$(db get_progress)
 
-else
+elif [ "$tipo" == "Pelicula" ]; then
+  capi="pelicula"
+
+elif [[ "$num_episodios" =~ ^[0-9]+$ ]] && [ "$num_episodios" -gt 0 ]; then
   capi=$(seq 1 "$num_episodios" | fzf \
     --prompt="Episodio: " \
     --height=~30 \
     --border \
     --reverse)
+
+else
+  echo -e "${YELLOW}No pude detectar la cantidad de episodios de este anime automaticamente.${NC}"
+  echo -e "Puede ser un bloqueo temporal de la web o un titulo que no coincide exactamente."
+  read -p "Numero de episodio que queres ver (Enter para volver): " capi
+  if [[ -z "$capi" ]]; then
+    clear
+    main
+    return
+  fi
 fi
 
 clear
