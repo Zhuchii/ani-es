@@ -3,6 +3,7 @@
 VERSION="1.3.1"
 
 CONTINUE=0
+FAVORITES=0
 progress="00:00:00"
 
 # cosas para texto
@@ -35,6 +36,7 @@ show_help() {
     echo "      -h, --help       Mostrar ayuda"
     echo "      -v, --version    Mostrar versión"
     echo "      -c, --continue   Continua el anime en donde ultimo lo dejaste"
+    echo "      -f, --favorites  Muestra tu lista de animes favoritos"
     echo ""
 }
 
@@ -55,6 +57,9 @@ while [[ $# -gt 0 ]]; do
             ;;
         -c|--continue)
             CONTINUE=1
+            ;;
+        -f|--favorites)
+            FAVORITES=1
             ;;
         *)
             break
@@ -99,6 +104,119 @@ detect_env() {
     else
         echo "linux"
     fi
+}
+
+# Acceso centralizado a la base de datos de historial/favoritos.
+# Uso: db <accion>  ->  get_last_cap | get_progress | save | set_last_cap
+#                       favorite | unfavorite | is_favorite | list_favorites
+# Los valores se pasan por entorno (no se interpolan en SQL) para evitar
+# romper con titulos que contengan comillas o apostrofes.
+db() {
+    ANIES_ANIME="$titulo_elegido" ANIES_CAPI="$capi" ANIES_PROGRESS="${pos:-$progress}" python3 - "$1" <<'PYEOF'
+import sqlite3
+import os
+import sys
+
+action = sys.argv[1] if len(sys.argv) > 1 else ""
+anime = os.environ.get("ANIES_ANIME", "")
+capi = os.environ.get("ANIES_CAPI", "")
+progress = os.environ.get("ANIES_PROGRESS", "")
+
+
+def conection():
+    home_dir = os.path.expanduser("~")
+    db_path = os.path.join(home_dir, "ani-es", "history.db")
+    return sqlite3.connect(db_path)
+
+
+conect = conection()
+cursor = conect.cursor()
+
+# Crear tabla si no existe y asegurar columnas
+cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='animes'")
+if cursor.fetchone()[0] == 0:
+    cursor.execute(
+        "CREATE TABLE animes (id INTEGER PRIMARY KEY, anime TEXT, last_cap TEXT, progress TEXT)"
+    )
+    conect.commit()
+
+cursor.execute("PRAGMA table_info(animes)")
+columns = [col[1] for col in cursor.fetchall()]
+if "progress" not in columns:
+    cursor.execute("ALTER TABLE animes ADD COLUMN progress TEXT DEFAULT 0")
+    conect.commit()
+if "favorite" not in columns:
+    cursor.execute("ALTER TABLE animes ADD COLUMN favorite INTEGER DEFAULT 0")
+    conect.commit()
+
+if action == "get_last_cap":
+    cursor.execute("SELECT last_cap FROM animes WHERE anime = ?", (anime,))
+    row = cursor.fetchone()
+    if row:
+        print(row[0])
+
+elif action == "get_progress":
+    cursor.execute("SELECT progress FROM animes WHERE anime = ?", (anime,))
+    row = cursor.fetchone()
+    if row and row[0] is not None:
+        print(row[0])
+
+elif action == "save":
+    cursor.execute("SELECT * FROM animes WHERE anime = ?", (anime,))
+    row = cursor.fetchone()
+    if row is None:
+        cursor.execute(
+            "INSERT INTO animes (anime, last_cap, progress) VALUES (?, ?, ?)",
+            (anime, capi, progress),
+        )
+    elif int(row[2]) < int(capi):
+        cursor.execute(
+            "UPDATE animes SET last_cap = ?, progress = ? WHERE anime = ?",
+            (capi, progress, anime),
+        )
+    else:
+        cursor.execute(
+            "UPDATE animes SET progress = ? WHERE anime = ?",
+            (progress, anime),
+        )
+    conect.commit()
+
+elif action == "set_last_cap":
+    cursor.execute("SELECT * FROM animes WHERE anime = ?", (anime,))
+    row = cursor.fetchone()
+    if row is None:
+        cursor.execute(
+            "INSERT INTO animes (anime, last_cap) VALUES (?, ?)", (anime, capi)
+        )
+    elif int(row[2]) < int(capi):
+        cursor.execute(
+            "UPDATE animes SET last_cap = ? WHERE anime = ?", (capi, anime)
+        )
+    conect.commit()
+
+elif action == "favorite":
+    cursor.execute("UPDATE animes SET favorite = 1 WHERE anime = ?", (anime,))
+    conect.commit()
+
+elif action == "unfavorite":
+    cursor.execute("UPDATE animes SET favorite = 0 WHERE anime = ?", (anime,))
+    conect.commit()
+
+elif action == "is_favorite":
+    cursor.execute("SELECT favorite FROM animes WHERE anime = ?", (anime,))
+    row = cursor.fetchone()
+    if row and row[0] == 1:
+        print("1")
+
+elif action == "list_favorites":
+    cursor.execute(
+        "SELECT anime, last_cap FROM animes WHERE favorite = 1 ORDER BY anime"
+    )
+    for a, lc in cursor.fetchall():
+        print(f"{a}\tUltimo episodio: {lc}")
+
+conect.close()
+PYEOF
 }
 
 main() {
@@ -305,7 +423,42 @@ fi
 
 }
 
-if [[ -z "$arg1" ]]; then
+if [ "$FAVORITES" == 1 ]; then
+  while true; do
+    favoritos=$(db list_favorites)
+
+    if [[ -z "$favoritos" ]]; then
+      echo -e "${YELLOW}No tenes animes en favoritos todavia.${NC}"
+      echo -e "Marcalos desde el menu despues de ver un episodio."
+      exit 0
+    fi
+
+    salida=$(echo "$favoritos" | fzf --delimiter='\t' --with-nth=1,2 \
+      --prompt="Favoritos: " --height=~20 --border --info=inline --margin=1,1,0,0 \
+      --expect=ctrl-x \
+      --header="Enter: ver  |  Ctrl-X: quitar de favoritos")
+
+    tecla=$(echo "$salida" | head -n 1)
+    seleccion=$(echo "$salida" | tail -n 1)
+
+    if [[ -z "$seleccion" ]]; then
+      exit 0
+    fi
+
+    anime_sel=$(echo "$seleccion" | cut -f1)
+
+    if [[ "$tecla" == "ctrl-x" ]]; then
+      titulo_elegido="$anime_sel"
+      db unfavorite
+      clear
+      continue
+    fi
+
+    oracion="$anime_sel"
+    clear
+    break
+  done
+elif [[ -z "$arg1" ]]; then
   read -p "Buscar Anime: " oracion
   clear
 else
@@ -426,38 +579,7 @@ fi
 
 clear
 echo -e "Anime: $GREEN $titulo_elegido $WHITE"
-  last_cap=$(python3 - <<END
-import sqlite3
-import os
-
-def conection():
-    home_dir = os.path.expanduser("~")
-    db_path = os.path.join(home_dir, "ani-es", "history.db")
-    return sqlite3.connect(db_path)
-
-anime = '$titulo_elegido'
-
-conect = conection()
-cursor = conect.cursor()
-
-cursor.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='animes' ''')
-if cursor.fetchone()[0] == 0:
-    cursor.execute('''
-        CREATE TABLE animes (
-            id INTEGER PRIMARY KEY,
-            anime TEXT,
-            last_cap TEXT,
-            progress TEXT
-        )
-    ''')
-conect.commit()
-
-cursor.execute('SELECT * FROM animes WHERE anime = ?', (anime,))
-row = cursor.fetchone()
-if row:
-    print(row[2])
-END
-)
+  last_cap=$(db get_last_cap)
 
 if [ -d "$url_without_https" ]; then
     tipo=$(grep -oP '<span>Tipo:</span> \K[^<]+' $url_without_https/index.html | tail -n 1)
@@ -486,25 +608,7 @@ fi
 
 if [ "$CONTINUE" == 1 ]; then
   capi=$last_cap
-  progress=$(python3 - <<END
-import sqlite3
-import os
-
-def conection():
-    home_dir = os.path.expanduser("~")
-    db_path = os.path.join(home_dir, "ani-es", "history.db")
-    return sqlite3.connect(db_path)
-
-conect = conection()
-cursor = conect.cursor()
-
-cursor.execute(f'SELECT progress from animes WHERE anime="$titulo_elegido"')
-
-response=cursor.fetchone()
-
-print(response[0])
-END
-)
+  progress=$(db get_progress)
 
 else
   capi=$(seq 1 "$num_episodios" | fzf \
@@ -613,119 +717,39 @@ case "$ENV" in
         ;;
 esac
 
-python3 - <<END
-import sqlite3
-import os
+db save
 
-def conection():
-    home_dir = os.path.expanduser("~")
-    db_path = os.path.join(home_dir, "ani-es", "history.db")
-    return sqlite3.connect(db_path)
+while true; do
+if [[ "$(db is_favorite)" == "1" ]]; then
+  opcion_fav="Quitar de favoritos"
+else
+  opcion_fav="Marcar favorito"
+fi
 
-anime = '$titulo_elegido'
-capi = '$capi'
+op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras"; echo "$opcion_fav") | tac | fzf --prompt="Selecciona una opción: " --height=8 --border --info=inline --margin=1,1,0,0)
 
-progress = "$pos"
-
-
-conect = conection()
-cursor = conect.cursor()
-
-# Crear tabla si no existe
-cursor.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='animes' ''')
-if cursor.fetchone()[0] == 0:
-    cursor.execute('''
-        CREATE TABLE animes (
-            id INTEGER PRIMARY KEY,
-            anime TEXT,
-            last_cap TEXT,
-            progress TEXT
-        )
-    ''')
-    conect.commit()
-
-
-cursor.execute("PRAGMA table_info(animes)")
-columns = [col[1] for col in cursor.fetchall()]
-
-if "progress" not in columns:
-    cursor.execute("ALTER TABLE animes ADD COLUMN progress TEXT DEFAULT 0")
-    conect.commit()
-
-# Insert / Update
-cursor.execute('SELECT * FROM animes WHERE anime = ?', (anime,))
-row = cursor.fetchone()
-
-if row is None:
-    cursor.execute(
-        'INSERT INTO animes (anime, last_cap, progress) VALUES (?, ?, ?)',
-        (anime, capi, progress)
-    )
-else:
-    if int(row[2]) < int(capi):
-        cursor.execute(
-            "UPDATE animes SET last_cap = ?, progress = ? WHERE anime = ?",
-            (capi, progress, anime)
-        )
-    else:
-        cursor.execute(
-            "UPDATE animes SET progress = ? WHERE anime = ?",
-            (progress, anime)
-        )
-
-conect.commit()
-END
-
-op=$( (echo "Siguiente"; echo "Retroceder"; echo "Atras") | tac | fzf --prompt="Selecciona una opción: " --height=7 --border --info=inline --margin=1,1,0,0)
+if [[ "$op" == "Marcar favorito" ]]; then
+  db favorite
+  echo -e "${GREEN}Añadido a favoritos${NC}"
+  continue
+elif [[ "$op" == "Quitar de favoritos" ]]; then
+  db unfavorite
+  echo -e "${YELLOW}Quitado de favoritos${NC}"
+  continue
+fi
+break
+done
 
 if [[ "$op" == "Siguiente" ]]; then
     progress="00:00:00"
   capi=$((capi + 1))
-python3 - <<END
-import sqlite3
-import os
-
-def conection():
-    home_dir = os.path.expanduser("~")
-    db_path = os.path.join(home_dir, "ani-es", "history.db")
-    return sqlite3.connect(db_path)
-
-anime = '$titulo_elegido'
-capi = '$capi'
-
-conect = conection()
-cursor = conect.cursor()
-
-cursor.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='animes' ''')
-if cursor.fetchone()[0] == 0:
-    cursor.execute('''
-        CREATE TABLE animes (
-            id INTEGER PRIMARY KEY,
-            anime TEXT,
-            last_cap TEXT,
-            progress TEXT
-        )
-    ''')
-conect.commit()
-cursor.execute('SELECT * FROM animes WHERE anime = ?', (anime,))
-row = cursor.fetchone()
-if row is None:
-  cursor.execute('INSERT INTO animes (anime, last_cap) VALUES (?, ?)', (anime, capi,))
-  conect.commit()
-else:
-  cursor.execute('SELECT *FROM animes WHERE anime = ?', [anime,])
-  row = cursor.fetchone()
-  if int(row[2])<int(capi):
-    cursor.execute("UPDATE animes SET last_cap = ? WHERE anime = ?", (capi, anime))
-    conect.commit()
-conect.commit()
-END
+  db set_last_cap
   videocap "$nuevaurl/$capi"
 elif [[ "$op" == "Retroceder" ]]; then
   progress="00:00:00"
   capi=$((capi - 1))
   videocap "$nuevaurl/$capi"
-elif [[ "$opcion" == "Atras" ]]; then
+elif [[ "$op" == "Atras" ]]; then
 
   main
 fi
