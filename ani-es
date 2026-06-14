@@ -662,11 +662,20 @@ echo -e "Anime: $GREEN $titulo_elegido $WHITE"
 
 if [ -d "$url_without_https" ]; then
     tipo=$(grep -oP '<span>Tipo:</span> \K[^<]+' $url_without_https/index.html | tail -n 1)
+    sinopsis=$(grep -oP '<meta name="description" content="\K[^"]+' "$url_without_https/index.html" | head -n 1 | sed 's/&quot;/"/g; s/&amp;/\&/g' | sed "s/&#0*39;/'/g")
 else
     tipo=$(grep -oP '<span>Tipo:</span> \K[^<]+' $url_without_https | tail -n 1)
+    sinopsis=$(grep -oP '<meta name="description" content="\K[^"]+' "$url_without_https" | head -n 1 | sed 's/&quot;/"/g; s/&amp;/\&/g' | sed "s/&#0*39;/'/g")
 fi
 
-
+if [ -n "$sinopsis" ]; then
+  if [ ${#sinopsis} -gt 350 ]; then
+    sinopsis="${sinopsis:0:350}..."
+  fi
+  echo ""
+  echo -e "${CYAN}${sinopsis}${NC}" | fold -s -w 100
+  echo ""
+fi
 
 echo -e "Ultimo episodio visto: $last_cap"
 
