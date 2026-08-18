@@ -121,7 +121,7 @@ get_last_cap() {
 
 get_progress() {
     jq -r --arg anime "$1" \
-        '.[$anime].progress // "00:00:00"' \
+        '(.[$anime].progress // "") | if . == "" then "00:00:00" else . end' \
         "$HISTORY_FILE"
 }
 
@@ -609,6 +609,16 @@ archivor="${url_without_https}/${capi}"
 archivor="${archivor//\/\//\/}"
 
 tre=$(grep -oP '<iframe[^>]+src="/jk.php\K[^"]*' "$archivor")
+
+# jkanime inyecta el iframe del reproductor desde JavaScript, asi que
+# "wget -p" ya no lo baja como recurso de la pagina: hay que pedirlo aparte.
+player_url=$(grep -oP 'src="\Khttps://jkanime\.net/jkplayer/um[^"]*' "$archivor" | head -n 1)
+if [ -n "$player_url" ] && ! ls jkanime.net/jkplayer/um* 1> /dev/null 2>&1; then
+  mkdir -p jkanime.net/jkplayer
+  curl -s --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" \
+       -e "$capa" "$player_url" -o jkanime.net/jkplayer/um
+fi
+
 # jkplayer (nuevo)
 if ls jkanime.net/jkplayer/um* 1> /dev/null 2>&1; then
   src_contenido=$(grep -A 1 "video: {" jkanime.net/jkplayer/um* | sed -n -e "s/.*url: '\(.*\)',.*/\1/p" -e "s/.*type: '\(.*\)'.*/\1/p")
